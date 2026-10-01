@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const authRoutes = require("./routes/auth.routes");
+const errorHandler = require("./middlewares/error.middleware");
 
 const app = express();
 
@@ -22,10 +24,15 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.get("/api/v1/health", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: "Fieldhouse API is running",
+    timestamp: new Date().toISOString(),
   });
 });
+
+app.use("/api/v1/auth", authRoutes);
+
+app.use(errorHandler);
 
 module.exports = app;
