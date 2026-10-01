@@ -58,10 +58,48 @@ const suspendStore = async (req, res) => {
   });
 };
 
+const getPendingProducts = async (req, res) => {
+  const products = await adminService.getPendingProducts();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      products,
+    },
+  });
+};
+
+const approveProduct = async (req, res) => {
+  const product = await adminService.approveProduct(req.params.productId);
+
+  res.status(200).json({
+    success: true,
+    message: "Product approved successfully",
+    data: {
+      product,
+    },
+  });
+};
+
+const rejectProduct = async (req, res) => {
+  const product = await adminService.rejectProduct(req.params.productId);
+
+  res.status(200).json({
+    success: true,
+    message: "Product rejected successfully",
+    data: {
+      product,
+    },
+  });
+};
+
 module.exports = {
   getSellerApplications,
   approveSeller,
   rejectSeller,
   approveStore,
   suspendStore,
+  getPendingProducts,
+  approveProduct,
+  rejectProduct,
 };

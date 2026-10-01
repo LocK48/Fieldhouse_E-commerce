@@ -1,4 +1,4 @@
-const { User, Store } = require("../models");
+const { User, Store, Product } = require("../models");
 
 const AppError = require("../utils/AppError");
 
@@ -93,10 +93,56 @@ const suspendStore = async (storeId) => {
   return store;
 };
 
+const getPendingProducts = async () => {
+  return Product.find({
+    status: "PENDING",
+  })
+    .populate("store", "name slug")
+    .populate("category", "name slug")
+    .sort({
+      createdAt: -1,
+    });
+};
+
+const approveProduct = async (productId) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  if (product.status !== "PENDING") {
+    throw new AppError("Product is not pending", 400);
+  }
+
+  product.status = "ACTIVE";
+
+  await product.save();
+
+  return product;
+};
+
+const rejectProduct = async (productId) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  product.status = "REJECTED";
+
+  await product.save();
+
+  return product;
+};
+
 module.exports = {
   getSellerApplications,
   approveSeller,
   rejectSeller,
   approveStore,
   suspendStore,
+  getPendingProducts,
+  approveProduct,
+  rejectProduct,
 };
