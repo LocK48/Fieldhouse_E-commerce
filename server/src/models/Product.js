@@ -2,15 +2,15 @@ const mongoose = require("mongoose");
 
 const variantSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
     sku: {
       type: String,
       required: true,
+      trim: true,
+      uppercase: true,
+    },
+
+    name: {
+      type: String,
       trim: true,
     },
 
@@ -18,6 +18,12 @@ const variantSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+    },
+
+    compareAtPrice: {
+      type: Number,
+      min: 0,
+      default: null,
     },
 
     stock: {
@@ -36,6 +42,11 @@ const variantSchema = new mongoose.Schema(
     image: {
       type: String,
       default: null,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   {
@@ -69,27 +80,21 @@ const productSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
-      unique: true,
-      lowercase: true,
       trim: true,
-      index: true,
+      lowercase: true,
     },
 
     description: {
       type: String,
       required: true,
+      maxlength: 5000,
     },
 
-    price: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-
-    compareAtPrice: {
-      type: Number,
-      min: 0,
-      default: null,
+    brand: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      index: true,
     },
 
     images: [
@@ -100,20 +105,20 @@ const productSchema = new mongoose.Schema(
 
     variants: [variantSchema],
 
-    stock: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-
     status: {
       type: String,
-      enum: ["DRAFT", "ACTIVE", "OUT_OF_STOCK", "ARCHIVED"],
+      enum: ["DRAFT", "PENDING", "ACTIVE", "REJECTED", "ARCHIVED"],
       default: "DRAFT",
       index: true,
     },
 
-    rating: {
+    isFeatured: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    averageRating: {
       type: Number,
       min: 0,
       max: 5,
@@ -122,6 +127,7 @@ const productSchema = new mongoose.Schema(
 
     reviewCount: {
       type: Number,
+      min: 0,
       default: 0,
     },
   },
@@ -133,6 +139,7 @@ const productSchema = new mongoose.Schema(
 productSchema.index({
   name: "text",
   description: "text",
+  brand: "text",
 });
 
 productSchema.index({
@@ -143,6 +150,10 @@ productSchema.index({
 productSchema.index({
   category: 1,
   status: 1,
+});
+
+productSchema.index({
+  "variants.price": 1,
 });
 
 module.exports = mongoose.model("Product", productSchema);

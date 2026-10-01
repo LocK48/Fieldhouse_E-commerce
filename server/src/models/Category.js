@@ -14,11 +14,12 @@ const categorySchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
-      index: true,
+      trim: true,
     },
 
     description: {
       type: String,
+      maxlength: 1000,
       default: "",
     },
 
@@ -39,10 +40,20 @@ const categorySchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+
+    sortOrder: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
   },
 );
+
+categorySchema.index({
+  parent: 1,
+  isActive: 1,
+});
 
 module.exports = mongoose.model("Category", categorySchema);

@@ -48,6 +48,48 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    sellerStatus: {
+      type: String,
+      enum: ["NONE", "PENDING", "APPROVED", "REJECTED", "SUSPENDED"],
+      default: "NONE",
+      index: true,
+    },
+
+    sellerApplication: {
+      businessName: {
+        type: String,
+        trim: true,
+        maxlength: 150,
+      },
+
+      description: {
+        type: String,
+        maxlength: 2000,
+      },
+
+      reason: {
+        type: String,
+        maxlength: 1000,
+      },
+
+      reviewedAt: {
+        type: Date,
+        default: null,
+      },
+
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+
+      rejectionReason: {
+        type: String,
+        maxlength: 1000,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,
