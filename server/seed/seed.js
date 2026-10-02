@@ -2,191 +2,78 @@ require("dotenv").config();
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-
 const connectDatabase = require("../src/config/database");
-
 const { User, Store, Category, Product } = require("../src/models");
 
-const seedDatabase = async () => {
+const password = "Password123!";
+const productData = [
+  { store: "nike", category: "football", name: "Nike Mercurial Vapor", slug: "nike-mercurial-vapor", brand: "Nike", description: "Giày đá bóng nhẹ, hỗ trợ tăng tốc và đổi hướng trên sân cỏ.", price: 3490000, compareAtPrice: 3990000, stock: 32 },
+  { store: "nike", category: "sportswear", name: "Nike Dri-FIT Academy", slug: "nike-dri-fit-academy", brand: "Nike", description: "Áo tập luyện thoáng khí với công nghệ Dri-FIT.", price: 890000, compareAtPrice: null, stock: 50 },
+  { store: "adidas", category: "football", name: "Adidas Predator League", slug: "adidas-predator-league", brand: "Adidas", description: "Kiểm soát bóng tự tin với thiết kế dành cho những pha xử lý chính xác.", price: 2990000, compareAtPrice: 3390000, stock: 24 },
+  { store: "adidas", category: "sportswear", name: "Adidas Tiro Training Jersey", slug: "adidas-tiro-training-jersey", brand: "Adidas", description: "Áo tập bóng đá cổ điển, nhẹ và dễ vận động.", price: 990000, compareAtPrice: null, stock: 40 },
+];
+
+async function seed() {
   try {
     await connectDatabase();
-
-    console.log("Clearing database...");
-
-    await User.deleteMany({});
-    await Store.deleteMany({});
-    await Category.deleteMany({});
-    await Product.deleteMany({});
-
-    console.log("Creating users...");
-
-    const password = await bcrypt.hash("Password123!", 12);
-
-    const admin = await User.create({
-      name: "Fieldhouse Admin",
-      email: "admin@fieldhouse.local",
-      password,
-      role: "ADMIN",
-      isVerified: true,
-    });
-
-    const seller1 = await User.create({
-      name: "Nike Seller",
-      email: "nike@fieldhouse.local",
-      password,
-      role: "SELLER",
-      isVerified: true,
-    });
-
-    const seller2 = await User.create({
-      name: "Adidas Seller",
-      email: "adidas@fieldhouse.local",
-      password,
-      role: "SELLER",
-      isVerified: true,
-    });
-
-    console.log("Users created.");
-
-    console.log("Creating stores...");
-
-    const nikeStore = await Store.create({
-      owner: seller1._id,
-      name: "Nike Official Store",
-      slug: "nike-official-store",
-      description: "Official Nike sports store on Fieldhouse.",
-      status: "ACTIVE",
-    });
-
-    const adidasStore = await Store.create({
-      owner: seller2._id,
-      name: "Adidas Official Store",
-      slug: "adidas-official-store",
-      description: "Official Adidas sports store on Fieldhouse.",
-      status: "ACTIVE",
-    });
-
-    console.log("Stores created.");
-
-    console.log("Creating categories...");
-
-    const categories = await Category.insertMany([
-      {
-        name: "Football",
-        slug: "football",
-        description: "Football products",
-      },
-      {
-        name: "Basketball",
-        slug: "basketball",
-        description: "Basketball products",
-      },
-      {
-        name: "Running",
-        slug: "running",
-        description: "Running products",
-      },
-      {
-        name: "Sportswear",
-        slug: "sportswear",
-        description: "Sports clothing",
-      },
-      {
-        name: "Accessories",
-        slug: "accessories",
-        description: "Sports accessories",
-      },
-    ]);
-
-    console.log("Categories created.");
-
-    console.log("Creating products...");
-
-    const footballCategory = categories.find(
-      (category) => category.slug === "football",
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const admin = await User.findOneAndUpdate(
+      { email: "admin@fieldhouse.local" },
+      { $setOnInsert: { name: "Fieldhouse Admin", email: "admin@fieldhouse.local", password: hashedPassword, role: "ADMIN", isVerified: true } },
+      { upsert: true, new: true },
     );
 
-    const sportswearCategory = categories.find(
-      (category) => category.slug === "sportswear",
-    );
+    const categories = {};
+    for (const [name, slug] of [["Bóng đá", "football"], ["Thời trang thể thao", "sportswear"], ["Chạy bộ", "running"], ["Phụ kiện", "accessories"]]) {
+      categories[slug] = await Category.findOneAndUpdate(
+        { slug },
+        { $setOnInsert: { name, slug, description: `Sản phẩm ${name.toLowerCase()}`, isActive: true } },
+        { upsert: true, new: true },
+      );
+    }
 
-    const products = await Product.insertMany([
-      {
-        store: nikeStore._id,
-        category: footballCategory._id,
-        name: "Nike Mercurial Vapor",
-        slug: "nike-mercurial-vapor",
-        description: "High-performance football boots.",
-        price: 149.99,
-        images: [],
-        stock: 50,
-        status: "ACTIVE",
-      },
+    const stores = {};
+    for (const [key, name, slug] of [["nike", "Nike Official Store", "nike-official-store"], ["adidas", "Adidas Official Store", "adidas-official-store"]]) {
+      const email = `${key}@fieldhouse.local`;
+      const owner = await User.findOneAndUpdate(
+        { email },
+        { $setOnInsert: { name: `${key[0].toUpperCase()}${key.slice(1)} Seller`, email, password: hashedPassword, role: "SELLER", sellerStatus: "APPROVED", isVerified: true } },
+        { upsert: true, new: true },
+      );
+      stores[key] = await Store.findOneAndUpdate(
+        { owner: owner._id },
+        { $setOnInsert: { owner: owner._id, name, slug, description: `Official ${key} sports store on Fieldhouse.`, status: "ACTIVE" } },
+        { upsert: true, new: true },
+      );
+    }
 
-      {
-        store: nikeStore._id,
-        category: sportswearCategory._id,
-        name: "Nike Dri-FIT Academy",
-        slug: "nike-dri-fit-academy",
-        description: "Lightweight football training jersey.",
-        price: 49.99,
-        images: [],
-        stock: 100,
-        status: "ACTIVE",
-      },
+    for (const item of productData) {
+      await Product.findOneAndUpdate(
+        { store: stores[item.store]._id, slug: item.slug },
+        { $setOnInsert: {
+          store: stores[item.store]._id,
+          category: categories[item.category]._id,
+          name: item.name,
+          slug: item.slug,
+          brand: item.brand,
+          description: item.description,
+          images: [],
+          variants: [{ sku: item.slug.toUpperCase(), name: "Mặc định", price: item.price, compareAtPrice: item.compareAtPrice, stock: item.stock }],
+          status: "ACTIVE",
+        } },
+        { upsert: true, new: true },
+      );
+    }
 
-      {
-        store: adidasStore._id,
-        category: footballCategory._id,
-        name: "Adidas Predator",
-        slug: "adidas-predator",
-        description: "Professional football boots.",
-        price: 159.99,
-        images: [],
-        stock: 40,
-        status: "ACTIVE",
-      },
-
-      {
-        store: adidasStore._id,
-        category: sportswearCategory._id,
-        name: "Adidas Tiro Jersey",
-        slug: "adidas-tiro-jersey",
-        description: "Classic football training jersey.",
-        price: 44.99,
-        images: [],
-        stock: 80,
-        status: "ACTIVE",
-      },
-    ]);
-
-    console.log(`${products.length} products created.`);
-
-    console.log("\nSeed completed successfully.");
-    console.log("--------------------------------");
-    console.log("Admin:");
-    console.log("Email: admin@fieldhouse.local");
-    console.log("Password: Password123!");
-    console.log("--------------------------------");
-    console.log("Seller 1:");
-    console.log("Email: nike@fieldhouse.local");
-    console.log("Password: Password123!");
-    console.log("--------------------------------");
-    console.log("Seller 2:");
-    console.log("Email: adidas@fieldhouse.local");
-    console.log("Password: Password123!");
-    console.log("--------------------------------");
-
-    await mongoose.connection.close();
-
-    process.exit(0);
+    console.log("Fieldhouse demo data is ready (existing records were kept).");
+    console.log("Demo password for the admin and seller accounts: Password123!");
+    console.log("Admin: admin@fieldhouse.local | Sellers: nike@fieldhouse.local, adidas@fieldhouse.local");
   } catch (error) {
-    console.error("Seed failed:", error);
-
+    console.error("Seed failed:", error.message);
+    process.exitCode = 1;
+  } finally {
     await mongoose.connection.close();
-
-    process.exit(1);
   }
-};
+}
 
-seedDatabase();
+seed();

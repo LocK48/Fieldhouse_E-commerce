@@ -9,6 +9,7 @@ const storeRoutes = require("./routes/store.routes");
 const adminRoutes = require("./routes/admin.routes");
 const categoryRoutes = require("./routes/category.routes");
 const productRoutes = require("./routes/product.routes");
+const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
 
@@ -16,12 +17,12 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   }),
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 if (process.env.NODE_ENV === "development") {
@@ -38,8 +39,6 @@ app.get("/api/v1/health", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 
-app.use(errorHandler);
-
 app.use("/api/v1/users", userRoutes);
 
 app.use("/api/v1/stores", storeRoutes);
@@ -49,5 +48,15 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 
 app.use("/api/v1/products", productRoutes);
+
+app.use("/api/v1/uploads", uploadRoutes);
+
+app.use((req, res, next) => {
+  const error = new Error(`Route not found: ${req.method} ${req.originalUrl}`);
+  error.statusCode = 404;
+  next(error);
+});
+
+app.use(errorHandler);
 
 module.exports = app;

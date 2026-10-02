@@ -1,6 +1,7 @@
 const { Product, Store, Category } = require("../models");
 
 const AppError = require("../utils/AppError");
+const slugify = require("../utils/slugify");
 
 const createProduct = async (userId, data) => {
   const store = await Store.findOne({
@@ -21,16 +22,25 @@ const createProduct = async (userId, data) => {
     throw new AppError("Category not found", 404);
   }
 
+  const slug = slugify(data.slug || data.name);
+  if (!slug) {
+    throw new AppError("Product name must contain letters or numbers", 400);
+  }
+
   const existingSlug = await Product.findOne({
-    slug: data.slug,
+    store: store._id,
+    slug,
   });
 
   if (existingSlug) {
     throw new AppError("Product slug already exists", 409);
   }
 
+  validateVariants(data.variants);
+
   const product = await Product.create({
     ...data,
+    slug,
     store: store._id,
     status: "PENDING",
   });
@@ -96,8 +106,18 @@ const updateProduct = async (userId, productId, data) => {
     "category",
     "images",
     "variants",
-    "isFeatured",
   ];
+
+  if (data.variants !== undefined) {
+    validateVariants(data.variants);
+  }
+
+  if (data.category !== undefined) {
+    const category = await Category.findOne({ _id: data.category, isActive: true });
+    if (!category) {
+      throw new AppError("Category not found", 404);
+    }
+  }
 
   for (const field of allowedFields) {
     if (data[field] !== undefined) {
@@ -156,26 +176,24 @@ const getProducts = async ({
   }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
-    filter["variants.price"] = {};
-
-    if (minPrice !== undefined) {
-      filter["variants.price"].$gte = Number(minPrice);
+    const priceRange = {};
+    if (minPrice !== undefined && Number.isFinite(Number(minPrice))) {
+      priceRange.$gte = Number(minPrice);
     }
-
-    if (maxPrice !== undefined) {
-      filter["variants.price"].$lte = Number(maxPrice);
+    if (maxPrice !== undefined && Number.isFinite(Number(maxPrice))) {
+      priceRange.$lte = Number(maxPrice);
     }
+    filter.variants = { $elemMatch: { price: priceRange, isActive: true } };
   }
 
   if (search) {
-    filter.$text = {
-      $search: search,
-    };
+    filter.$text = { $search: search };
   }
 
-  const pageNumber = Math.max(Number(page), 1);
-
-  const limitNumber = Math.min(Math.max(Number(limit), 1), 100);
+  const parsedPage = Number.parseInt(page, 10);
+  const parsedLimit = Number.parseInt(limit, 10);
+  const pageNumber = Number.isFinite(parsedPage) ? Math.max(parsedPage, 1) : 1;
+  const limitNumber = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 20;
 
   const skip = (pageNumber - 1) * limitNumber;
 
@@ -216,7 +234,7 @@ const getProducts = async ({
       .sort(sortOption)
       .skip(skip)
       .limit(limitNumber)
-      .lean(),
+      .lean({ virtuals: true }),
 
     Product.countDocuments(filter),
   ]);
@@ -234,6 +252,35 @@ const getProducts = async ({
   };
 };
 
+const validateVariants = (variants = []) => {
+  if (!Array.isArray(variants) || variants.length === 0) {
+    throw new AppError("At least one product variant is required", 400);
+  }
+
+  const skuSet = new Set();
+
+  for (const variant of variants) {
+    const sku = String(variant.sku || "").trim().toUpperCase();
+    if (!sku) {
+      throw new AppError("Every variant must have a SKU", 400);
+    }
+
+    if (skuSet.has(sku)) {
+      throw new AppError(`Duplicate SKU: ${variant.sku}`, 400);
+    }
+
+    skuSet.add(sku);
+
+    if (!Number.isFinite(Number(variant.price)) || Number(variant.price) < 0) {
+      throw new AppError("Variant price must be a non-negative number", 400);
+    }
+
+    if (!Number.isFinite(Number(variant.stock)) || Number(variant.stock) < 0) {
+      throw new AppError("Variant stock must be a non-negative number", 400);
+    }
+  }
+};
+
 module.exports = {
   createProduct,
   getProducts,
@@ -241,4 +288,5 @@ module.exports = {
   getMyProducts,
   updateProduct,
   deleteProduct,
+  validateVariants,
 };

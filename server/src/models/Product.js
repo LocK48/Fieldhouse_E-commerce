@@ -1,5 +1,37 @@
 const mongoose = require("mongoose");
 
+const productImageSchema = new mongoose.Schema(
+  {
+    url: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    key: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    alt: {
+      type: String,
+      default: "",
+      maxlength: 200,
+      trim: true,
+    },
+
+    sortOrder: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
 const variantSchema = new mongoose.Schema(
   {
     sku: {
@@ -39,9 +71,9 @@ const variantSchema = new mongoose.Schema(
       default: {},
     },
 
-    image: {
-      type: String,
-      default: null,
+    images: {
+      type: [productImageSchema],
+      default: [],
     },
 
     isActive: {
@@ -97,13 +129,15 @@ const productSchema = new mongoose.Schema(
       index: true,
     },
 
-    images: [
-      {
-        type: String,
-      },
-    ],
+    images: {
+      type: [productImageSchema],
+      default: [],
+    },
 
-    variants: [variantSchema],
+    variants: {
+      type: [variantSchema],
+      default: [],
+    },
 
     status: {
       type: String,
@@ -152,8 +186,43 @@ productSchema.index({
   status: 1,
 });
 
+productSchema.index(
+  {
+    store: 1,
+    slug: 1,
+  },
+  {
+    unique: true,
+  },
+);
+
 productSchema.index({
   "variants.price": 1,
+});
+
+productSchema.virtual("priceRange").get(function () {
+  if (!this.variants.length) {
+    return null;
+  }
+
+  const prices = this.variants.map((variant) => variant.price);
+
+  return {
+    min: Math.min(...prices),
+    max: Math.max(...prices),
+  };
+});
+
+productSchema.virtual("totalStock").get(function () {
+  return this.variants.reduce((total, variant) => total + variant.stock, 0);
+});
+
+productSchema.set("toJSON", {
+  virtuals: true,
+});
+
+productSchema.set("toObject", {
+  virtuals: true,
 });
 
 module.exports = mongoose.model("Product", productSchema);
