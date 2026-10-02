@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
   addCartItem,
   getCart,
@@ -36,6 +37,30 @@ const freeShippingThreshold = 1_500_000;
 const standardShipping = 30_000;
 
 function App() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const view = ({
+    "/": "shop",
+    "/cart": "cart",
+    "/checkout": "checkout",
+    "/orders": "orders",
+    "/profile": "profile",
+    "/wishlist": "wishlist",
+    "/seller": "management",
+    "/admin": "management",
+  })[location.pathname] || "shop";
+  const setView = (nextView) => {
+    const paths = {
+      shop: "/",
+      cart: "/cart",
+      checkout: "/checkout",
+      orders: "/orders",
+      profile: "/profile",
+      wishlist: "/wishlist",
+      management: "/seller",
+    };
+    navigate(nextView === "management" && user?.role === "ADMIN" ? "/admin" : paths[nextView] || "/");
+  };
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState("");
@@ -46,13 +71,16 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState("");
   const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(() =>
+    !localStorage.getItem("fieldhouse-access-token") &&
+    !localStorage.getItem("fieldhouse-refresh-token"),
+  );
   const [cart, setCart] = useState({ items: [], subtotal: 0 });
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedVariantId, setSelectedVariantId] = useState("");
-  const [view, setView] = useState("shop");
   const [authOpen, setAuthOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [pendingAdd, setPendingAdd] = useState(null);
@@ -141,13 +169,15 @@ function App() {
     if (
       !localStorage.getItem("fieldhouse-access-token") &&
       !localStorage.getItem("fieldhouse-refresh-token")
-    )
+    ) {
       return undefined;
+    }
 
     getCurrentUser()
       .then(async (currentUser) => {
         if (!active) return;
         setUser(currentUser);
+        setAuthChecked(true);
         setShipping((value) => ({
           ...value,
           recipientName: currentUser.name || value.recipientName,
@@ -156,6 +186,7 @@ function App() {
         if (active) setCart(currentCart);
       })
       .catch(() => {
+        if (active) setAuthChecked(true);
         localStorage.removeItem("fieldhouse-access-token");
         localStorage.removeItem("fieldhouse-refresh-token");
       });
@@ -490,8 +521,12 @@ function App() {
     setReturnView("shop");
   }
 
+  const protectedPage = (content) => authChecked
+    ? user ? content : <Navigate to="/" replace />
+    : null;
+
   return (
-    <div className="app-shell">
+    <div className="app-shell mx-auto min-h-screen w-full max-w-[1440px] overflow-hidden bg-[#faf9f6] text-[#18211d]">
       <div className="announcement">
         Giao hàng miễn phí cho đơn từ 1.500.000₫ <span>·</span> Thanh toán khi
         nhận hàng
@@ -533,7 +568,8 @@ function App() {
         </div>
       )}
 
-      {view === "shop" && (
+      <Routes>
+      <Route path="/" element={
         <HomePage
           products={products}
           categories={categories}
@@ -559,8 +595,8 @@ function App() {
           }
           onToggleWishlist={toggleWishlist}
         />
-      )}
-      {view === "cart" && (
+      } />
+      <Route path="/cart" element={protectedPage(
         <CartPage
           cart={cart}
           cartCount={cartCount}
@@ -573,8 +609,8 @@ function App() {
           onContinueShopping={() => setView("shop")}
           onCheckout={openCheckout}
         />
-      )}
-      {view === "checkout" && (
+      )} />
+      <Route path="/checkout" element={protectedPage(
         <CheckoutPage
           cart={cart}
           cartTotal={cartTotal}
@@ -587,23 +623,23 @@ function App() {
           onBack={() => setView("cart")}
           onSubmit={placeOrder}
         />
-      )}
-      {view === "orders" && (
+      )} />
+      <Route path="/orders" element={protectedPage(
         <OrdersPage
           orders={orders}
           loading={ordersLoading}
           onShop={() => setView("shop")}
           onReviewed={(orderId, productId) => setOrders((items) => items.map((order) => order._id === orderId ? { ...order, reviewedProductIds: [...(order.reviewedProductIds || []), String(productId)] } : order))}
         />
-      )}
-      {view === "profile" && user && (
+      )} />
+      <Route path="/profile" element={protectedPage(
         <ProfilePage
           user={user}
           onUserChange={setUser}
           onFeedback={(type, text) => setFeedback({ type, text })}
         />
-      )}
-      {view === "wishlist" && user && (
+      )} />
+      <Route path="/wishlist" element={protectedPage(
         <WishlistPage
           products={wishlist}
           loading={wishlistLoading}
@@ -612,22 +648,24 @@ function App() {
           onRemove={(product) => toggleWishlist(product)}
           onShop={() => setView("shop")}
         />
-      )}
-      {view === "management" && user?.role === "ADMIN" && (
+      )} />
+      <Route path="/admin" element={!authChecked ? null : user?.role === "ADMIN" ? (
         <AdminPage
           onFeedback={(type, text) => setFeedback({ type, text })}
           onCategoriesChanged={async () => setCategories(await getCategories())}
           productImage={productImage}
         />
-      )}
-      {view === "management" && user && user.role !== "ADMIN" && (
+      ) : <Navigate to={user ? "/seller" : "/"} replace />} />
+      <Route path="/seller" element={!authChecked ? null : user && user.role !== "ADMIN" ? (
         <SellerPage
           user={user}
           onUserChange={setUser}
           onFeedback={(type, text) => setFeedback({ type, text })}
           productImage={productImage}
         />
-      )}
+      ) : <Navigate to={user?.role === "ADMIN" ? "/admin" : "/"} replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       <footer className="site-footer">
         <a className="brand" href="#home" onClick={() => setView("shop")}>
