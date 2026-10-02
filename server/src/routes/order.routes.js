@@ -1,7 +1,11 @@
 const express = require("express");
 const { authenticate } = require("../middlewares/auth.middleware");
 const asyncHandler = require("../utils/asyncHandler");
-const { createCodOrder, getMyOrders, getMyOrder } = require("../controllers/order.controller");
+const {
+  createCodOrder,
+  getMyOrders,
+  getMyOrder,
+} = require("../controllers/order.controller");
 
 const router = express.Router();
 router.use(authenticate);

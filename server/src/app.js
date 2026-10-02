@@ -12,6 +12,9 @@ const productRoutes = require("./routes/product.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const cartRoutes = require("./routes/cart.routes");
 const orderRoutes = require("./routes/order.routes");
+const wishlistRoutes = require("./routes/wishlist.routes");
+const addressRoutes = require("./routes/address.routes");
+const reviewRoutes = require("./routes/review.routes");
 
 const app = express();
 
@@ -41,6 +44,7 @@ app.get("/api/v1/health", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 
+app.use("/api/v1/users/me/addresses", addressRoutes);
 app.use("/api/v1/users", userRoutes);
 
 app.use("/api/v1/stores", storeRoutes);
@@ -56,6 +60,10 @@ app.use("/api/v1/uploads", uploadRoutes);
 app.use("/api/v1/cart", cartRoutes);
 
 app.use("/api/v1/orders", orderRoutes);
+
+app.use("/api/v1/wishlist", wishlistRoutes);
+
+app.use("/api/v1/reviews", reviewRoutes);
 
 app.use((req, res, next) => {
   const error = new Error(`Route not found: ${req.method} ${req.originalUrl}`);

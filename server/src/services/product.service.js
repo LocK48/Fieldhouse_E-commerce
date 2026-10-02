@@ -113,7 +113,10 @@ const updateProduct = async (userId, productId, data) => {
   }
 
   if (data.category !== undefined) {
-    const category = await Category.findOne({ _id: data.category, isActive: true });
+    const category = await Category.findOne({
+      _id: data.category,
+      isActive: true,
+    });
     if (!category) {
       throw new AppError("Category not found", 404);
     }
@@ -193,7 +196,9 @@ const getProducts = async ({
   const parsedPage = Number.parseInt(page, 10);
   const parsedLimit = Number.parseInt(limit, 10);
   const pageNumber = Number.isFinite(parsedPage) ? Math.max(parsedPage, 1) : 1;
-  const limitNumber = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 20;
+  const limitNumber = Number.isFinite(parsedLimit)
+    ? Math.min(Math.max(parsedLimit, 1), 100)
+    : 20;
 
   const skip = (pageNumber - 1) * limitNumber;
 
@@ -260,7 +265,9 @@ const validateVariants = (variants = []) => {
   const skuSet = new Set();
 
   for (const variant of variants) {
-    const sku = String(variant.sku || "").trim().toUpperCase();
+    const sku = String(variant.sku || "")
+      .trim()
+      .toUpperCase();
     if (!sku) {
       throw new AppError("Every variant must have a SKU", 400);
     }

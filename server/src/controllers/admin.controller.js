@@ -74,6 +74,16 @@ const getPendingProducts = async (req, res) => {
   });
 };
 
+const getManageableOrders = async (req, res) => {
+  const orders = await adminService.getManageableOrders();
+  res.status(200).json({ success: true, data: { orders } });
+};
+
+const advanceOrderStatus = async (req, res) => {
+  const order = await adminService.advanceOrderStatus(req.params.orderId);
+  res.status(200).json({ success: true, data: { order } });
+};
+
 const approveProduct = async (req, res) => {
   const product = await adminService.approveProduct(req.params.productId);
 
@@ -106,6 +116,8 @@ module.exports = {
   approveStore,
   suspendStore,
   getPendingProducts,
+  getManageableOrders,
+  advanceOrderStatus,
   approveProduct,
   rejectProduct,
 };

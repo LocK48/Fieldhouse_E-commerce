@@ -53,7 +53,9 @@ const createProductImageUpload = async ({
 
   const publicBaseUrl = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
   if (!publicBaseUrl) {
-    const error = new Error("R2_PUBLIC_URL is required to serve uploaded images");
+    const error = new Error(
+      "R2_PUBLIC_URL is required to serve uploaded images",
+    );
     error.statusCode = 503;
     throw error;
   }

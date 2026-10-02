@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { Cart, Order, Payment, Product, Store } = require("../models");
+const { Cart, Order, Payment, Product, Store, Review } = require("../models");
 const AppError = require("../utils/AppError");
 
 const FREE_SHIPPING_THRESHOLD = 1_500_000;
@@ -11,7 +11,10 @@ const requiredText = (value, field, maxLength) => {
   }
   const cleaned = value.trim();
   if (cleaned.length > maxLength) {
-    throw new AppError(`${field} must be ${maxLength} characters or fewer`, 400);
+    throw new AppError(
+      `${field} must be ${maxLength} characters or fewer`,
+      400,
+    );
   }
   return cleaned;
 };
@@ -33,9 +36,10 @@ const validateShippingAddress = (address) => {
     ward: requiredText(address.ward, "Ward", 100),
     district: requiredText(address.district, "District", 100),
     city: requiredText(address.city, "City or province", 100),
-    country: typeof address.country === "string" && address.country.trim()
-      ? address.country.trim().slice(0, 100)
-      : "Vietnam",
+    country:
+      typeof address.country === "string" && address.country.trim()
+        ? address.country.trim().slice(0, 100)
+        : "Vietnam",
   };
 };
 
@@ -56,14 +60,28 @@ const createCodOrder = async (userId, shippingAddressInput) => {
       let subtotal = 0;
 
       for (const cartItem of cart.items) {
-        const product = await Product.findOne({ _id: cartItem.product, status: "ACTIVE" }).session(session);
+        const product = await Product.findOne({
+          _id: cartItem.product,
+          status: "ACTIVE",
+        }).session(session);
         if (!product) {
-          throw new AppError("A product in your cart is no longer available", 409);
+          throw new AppError(
+            "A product in your cart is no longer available",
+            409,
+          );
         }
 
-        const store = await Store.findOne({ _id: product.store, status: "ACTIVE" }).select("_id").session(session);
+        const store = await Store.findOne({
+          _id: product.store,
+          status: "ACTIVE",
+        })
+          .select("_id")
+          .session(session);
         if (!store) {
-          throw new AppError("A store in your cart is no longer available", 409);
+          throw new AppError(
+            "A store in your cart is no longer available",
+            409,
+          );
         }
 
         const variant = product.variants.id(cartItem.variantId);
@@ -113,28 +131,39 @@ const createCodOrder = async (userId, shippingAddressInput) => {
         });
       }
 
-      const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
-      const [order] = await Order.create([{
-        user: userId,
-        items: orderItems,
-        shippingAddress,
-        subtotal,
-        shippingFee,
-        discount: 0,
-        total: subtotal + shippingFee,
-        paymentMethod: "COD",
-        paymentStatus: "PENDING",
-        orderStatus: "PENDING",
-      }], { session });
+      const shippingFee =
+        subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
+      const [order] = await Order.create(
+        [
+          {
+            user: userId,
+            items: orderItems,
+            shippingAddress,
+            subtotal,
+            shippingFee,
+            discount: 0,
+            total: subtotal + shippingFee,
+            paymentMethod: "COD",
+            paymentStatus: "PENDING",
+            orderStatus: "PENDING",
+          },
+        ],
+        { session },
+      );
 
-      await Payment.create([{
-        order: order._id,
-        user: userId,
-        provider: "COD",
-        amount: order.total,
-        currency: "VND",
-        status: "PENDING",
-      }], { session });
+      await Payment.create(
+        [
+          {
+            order: order._id,
+            user: userId,
+            provider: "COD",
+            amount: order.total,
+            currency: "VND",
+            status: "PENDING",
+          },
+        ],
+        { session },
+      );
 
       cart.items = [];
       cart.subtotal = 0;
@@ -152,7 +181,9 @@ const getMyOrders = async (userId, { page = 1, limit = 10 } = {}) => {
   const parsedPage = Number.parseInt(page, 10);
   const parsedLimit = Number.parseInt(limit, 10);
   const pageNumber = Number.isFinite(parsedPage) ? Math.max(parsedPage, 1) : 1;
-  const limitNumber = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 50) : 10;
+  const limitNumber = Number.isFinite(parsedLimit)
+    ? Math.min(Math.max(parsedLimit, 1), 50)
+    : 10;
   const filter = { user: userId };
   const [orders, total] = await Promise.all([
     Order.find(filter)
@@ -163,8 +194,16 @@ const getMyOrders = async (userId, { page = 1, limit = 10 } = {}) => {
     Order.countDocuments(filter),
   ]);
 
+  const existingReviews = orders.length ? await Review.find({ user: userId, order: { $in: orders.map((order) => order._id) } }).select("order product").lean() : [];
+  const reviewedByOrder = new Map();
+  for (const review of existingReviews) {
+    const orderId = review.order.toString();
+    if (!reviewedByOrder.has(orderId)) reviewedByOrder.set(orderId, []);
+    reviewedByOrder.get(orderId).push(review.product.toString());
+  }
+
   return {
-    orders,
+    orders: orders.map((order) => ({ ...order, reviewedProductIds: reviewedByOrder.get(order._id.toString()) || [] })),
     pagination: {
       page: pageNumber,
       limit: limitNumber,

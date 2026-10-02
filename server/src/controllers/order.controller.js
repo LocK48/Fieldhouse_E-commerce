@@ -1,7 +1,10 @@
 const orderService = require("../services/order.service");
 
 const createCodOrder = async (req, res) => {
-  const order = await orderService.createCodOrder(req.user._id, req.body?.shippingAddress);
+  const order = await orderService.createCodOrder(
+    req.user._id,
+    req.body?.shippingAddress,
+  );
   res.status(201).json({
     success: true,
     message: "Cash-on-delivery order created",

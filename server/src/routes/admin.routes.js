@@ -8,6 +8,8 @@ const {
   approveStore,
   suspendStore,
   getPendingProducts,
+  getManageableOrders,
+  advanceOrderStatus,
   approveProduct,
   rejectProduct,
 } = require("../controllers/admin.controller");
@@ -35,6 +37,8 @@ router.patch("/stores/:storeId/approve", asyncHandler(approveStore));
 router.patch("/stores/:storeId/suspend", asyncHandler(suspendStore));
 
 router.get("/products/pending", asyncHandler(getPendingProducts));
+router.get("/orders", asyncHandler(getManageableOrders));
+router.patch("/orders/:orderId/advance", asyncHandler(advanceOrderStatus));
 
 router.patch("/products/:productId/approve", asyncHandler(approveProduct));
 
