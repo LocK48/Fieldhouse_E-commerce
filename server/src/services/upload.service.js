@@ -30,6 +30,10 @@ const createProductImageUpload = async ({
     throw new AppError("Product not found or you do not own this product", 404);
   }
 
+  if (product.images.length >= 10) {
+    throw new AppError("A product can have at most 10 images", 400);
+  }
+
   storageService.validateImage({
     fileName,
     contentType,

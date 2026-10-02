@@ -1,6 +1,8 @@
 const express = require("express");
 const { authenticate } = require("../middlewares/auth.middleware");
 const asyncHandler = require("../utils/asyncHandler");
+const validate = require("../middlewares/validate.middleware");
+const schemas = require("../validations/schemas");
 const {
   getCart,
   addItem,
@@ -13,9 +15,13 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get("/", asyncHandler(getCart));
-router.post("/items", asyncHandler(addItem));
-router.patch("/items", asyncHandler(updateItemQuantity));
-router.delete("/items", asyncHandler(removeItem));
+router.post("/items", validate(schemas.cartAdd), asyncHandler(addItem));
+router.patch(
+  "/items",
+  validate(schemas.cartUpdate),
+  asyncHandler(updateItemQuantity),
+);
+router.delete("/items", validate(schemas.cartRemove), asyncHandler(removeItem));
 router.delete("/", asyncHandler(clearCart));
 
 module.exports = router;

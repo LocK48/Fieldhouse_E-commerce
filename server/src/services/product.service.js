@@ -175,7 +175,8 @@ const getProducts = async ({
   }
 
   if (brand) {
-    filter.brand = new RegExp(brand, "i");
+    const escapedBrand = brand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.brand = new RegExp(escapedBrand, "i");
   }
 
   if (minPrice !== undefined || maxPrice !== undefined) {

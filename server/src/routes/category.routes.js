@@ -11,17 +11,24 @@ const {
 const { authenticate, authorize } = require("../middlewares/auth.middleware");
 
 const asyncHandler = require("../utils/asyncHandler");
+const validate = require("../middlewares/validate.middleware");
+const schemas = require("../validations/schemas");
 
 const router = express.Router();
 
 router.get("/", asyncHandler(getCategories));
 
-router.get("/:id", asyncHandler(getCategory));
+router.get(
+  "/:id",
+  validate(schemas.idParams("id"), "params"),
+  asyncHandler(getCategory),
+);
 
 router.post(
   "/",
   authenticate,
   authorize("ADMIN"),
+  validate(schemas.categoryBody),
   asyncHandler(createCategory),
 );
 
@@ -29,6 +36,8 @@ router.patch(
   "/:id",
   authenticate,
   authorize("ADMIN"),
+  validate(schemas.idParams("id"), "params"),
+  validate(schemas.categoryPatch),
   asyncHandler(updateCategory),
 );
 
@@ -36,6 +45,7 @@ router.delete(
   "/:id",
   authenticate,
   authorize("ADMIN"),
+  validate(schemas.idParams("id"), "params"),
   asyncHandler(deleteCategory),
 );
 

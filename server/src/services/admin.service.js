@@ -109,13 +109,14 @@ const getPendingProducts = async () => {
     });
 };
 
-const getManageableOrders = async () => Order.find({
-  orderStatus: { $in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED"] },
-})
-  .populate("user", "name email")
-  .sort({ createdAt: -1 })
-  .limit(100)
-  .lean();
+const getManageableOrders = async () =>
+  Order.find({
+    orderStatus: { $in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED"] },
+  })
+    .populate("user", "name email")
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
 
 const advanceOrderStatus = async (orderId) => {
   const order = await Order.findById(orderId);
@@ -126,7 +127,8 @@ const advanceOrderStatus = async (orderId) => {
     PROCESSING: "SHIPPED",
     SHIPPED: "DELIVERED",
   }[order.orderStatus];
-  if (!nextStatus) throw new AppError("Order cannot move to another status", 400);
+  if (!nextStatus)
+    throw new AppError("Order cannot move to another status", 400);
   const updatedOrder = await Order.findOneAndUpdate(
     { _id: order._id, orderStatus: order.orderStatus },
     {
@@ -137,9 +139,13 @@ const advanceOrderStatus = async (orderId) => {
     },
     { new: true, runValidators: true },
   );
-  if (!updatedOrder) throw new AppError("Order status changed; refresh and retry", 409);
+  if (!updatedOrder)
+    throw new AppError("Order status changed; refresh and retry", 409);
   if (nextStatus === "DELIVERED") {
-    await Payment.updateOne({ order: order._id }, { $set: { status: "SUCCEEDED", paidAt: new Date() } });
+    await Payment.updateOne(
+      { order: order._id },
+      { $set: { status: "SUCCEEDED", paidAt: new Date() } },
+    );
   }
   return updatedOrder;
 };
@@ -167,6 +173,10 @@ const rejectProduct = async (productId) => {
 
   if (!product) {
     throw new AppError("Product not found", 404);
+  }
+
+  if (product.status !== "PENDING") {
+    throw new AppError("Product is not pending", 400);
   }
 
   product.status = "REJECTED";

@@ -11,16 +11,22 @@ const {
 const { authenticate } = require("../middlewares/auth.middleware");
 
 const asyncHandler = require("../utils/asyncHandler");
+const validate = require("../middlewares/validate.middleware");
+const schemas = require("../validations/schemas");
 
 const router = express.Router();
 
-router.post("/register", asyncHandler(register));
+router.post(
+  "/register",
+  validate(schemas.authRegister),
+  asyncHandler(register),
+);
 
-router.post("/login", asyncHandler(login));
+router.post("/login", validate(schemas.authLogin), asyncHandler(login));
 
-router.post("/refresh", asyncHandler(refresh));
+router.post("/refresh", validate(schemas.refreshToken), asyncHandler(refresh));
 
-router.post("/logout", asyncHandler(logout));
+router.post("/logout", validate(schemas.refreshToken), asyncHandler(logout));
 
 router.get("/me", authenticate, asyncHandler(getMe));
 
