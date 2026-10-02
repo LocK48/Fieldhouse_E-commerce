@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
   getSellerApplications,
+  getPendingStores,
   approveSeller,
   rejectSeller,
   approveStore,
@@ -20,6 +21,7 @@ const router = express.Router();
 router.use(authenticate, authorize("ADMIN"));
 
 router.get("/seller-applications", asyncHandler(getSellerApplications));
+router.get("/stores/pending", asyncHandler(getPendingStores));
 
 router.patch(
   "/seller-applications/:userId/approve",

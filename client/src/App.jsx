@@ -11,9 +11,12 @@ import CartPage from './pages/Cart/CartPage'
 import CheckoutPage from './pages/Checkout/CheckoutPage'
 import HomePage from './pages/Home/HomePage'
 import OrdersPage from './pages/Orders/OrdersPage'
+import SellerPage from './pages/Seller/SellerPage'
+import AdminPage from './pages/Admin/AdminPage'
 import mercurialImage from '../../mercurial.webp'
 import './App.css'
 import './Commerce.css'
+import './Dashboard.css'
 
 const freeShippingThreshold = 1_500_000
 const standardShipping = 30_000
@@ -261,6 +264,7 @@ function App() {
       onOpenAuth={() => setAuthOpen(true)}
       onLogout={handleLogout}
       onOpenCart={openCart}
+      onOpenManagement={() => { setView('management'); setAccountMenuOpen(false) }}
     />
 
     {feedback && <div className={`feedback feedback-${feedback.type}`} role="status"><span>{feedback.text}</span><button onClick={() => setFeedback(null)} aria-label="Đóng thông báo">×</button></div>}
@@ -303,6 +307,8 @@ function App() {
       onSubmit={placeOrder}
     />}
     {view === 'orders' && <OrdersPage orders={orders} loading={ordersLoading} onShop={() => setView('shop')}/>}
+    {view === 'management' && user?.role === 'ADMIN' && <AdminPage onFeedback={(type, text) => setFeedback({ type, text })} productImage={productImage}/>}
+    {view === 'management' && user && user.role !== 'ADMIN' && <SellerPage user={user} onUserChange={setUser} onFeedback={(type, text) => setFeedback({ type, text })} productImage={productImage}/>}
 
     <footer className="site-footer"><a className="brand" href="#home" onClick={() => setView('shop')}><span className="brand-mark">F</span><span>fieldhouse<span className="brand-dot">.</span></span></a><p>Built for the love of the game.</p><span>© 2026 FIELDHOUSE</span></footer>
 

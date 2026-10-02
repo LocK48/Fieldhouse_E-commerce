@@ -11,6 +11,11 @@ export async function getProduct(id) {
   return response.data.data.product
 }
 
+export async function getMyProducts() {
+  const response = await api.get('/products/seller/me')
+  return response.data.data.products
+}
+
 export async function createProduct(data) {
   const response = await api.post('/products', data)
   return response.data.data.product

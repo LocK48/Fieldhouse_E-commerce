@@ -12,6 +12,10 @@ const getSellerApplications = async () => {
     });
 };
 
+const getPendingStores = async () => Store.find({ status: 'PENDING' })
+  .populate('owner', 'name email')
+  .sort({ createdAt: -1 });
+
 const approveSeller = async (adminId, userId) => {
   const user = await User.findById(userId);
 
@@ -138,6 +142,7 @@ const rejectProduct = async (productId) => {
 
 module.exports = {
   getSellerApplications,
+  getPendingStores,
   approveSeller,
   rejectSeller,
   approveStore,

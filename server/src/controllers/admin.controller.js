@@ -11,6 +11,11 @@ const getSellerApplications = async (req, res) => {
   });
 };
 
+const getPendingStores = async (req, res) => {
+  const stores = await adminService.getPendingStores();
+  res.status(200).json({ success: true, data: { stores } });
+};
+
 const approveSeller = async (req, res) => {
   const user = await adminService.approveSeller(
     req.user._id,
@@ -95,6 +100,7 @@ const rejectProduct = async (req, res) => {
 
 module.exports = {
   getSellerApplications,
+  getPendingStores,
   approveSeller,
   rejectSeller,
   approveStore,
