@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import {
   addCartItem,
+  clearCart,
   getCart,
   removeCartItem,
   updateCartItem,
 } from "./api/cart.api";
 import { getCategories } from "./api/category.api";
 import { getCurrentUser, login, logout, registerAccount } from "./api/auth.api";
-import { createCodOrder, getMyOrders } from "./api/order.api";
+import { cancelMyOrder, createCodOrder, getMyOrders } from "./api/order.api";
 import { getProducts } from "./api/product.api";
 import { getAddresses } from "./api/address.api";
 import {
@@ -413,6 +414,20 @@ function App() {
     }
   }
 
+  async function cancelOrder(order) {
+    if (!window.confirm(`Hủy đơn hàng #${order._id.slice(-8).toUpperCase()}?`)) return;
+    setBusy(true);
+    try {
+      const updatedOrder = await cancelMyOrder(order._id);
+      setOrders((items) => items.map((item) => item._id === order._id ? updatedOrder : item));
+      setFeedback({ type: "success", text: "Đã hủy đơn hàng. Tồn kho đã được hoàn lại." });
+    } catch (reason) {
+      setFeedback({ type: "error", text: reason.response?.data?.message || reason.message || "Không thể hủy đơn hàng." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function openOrders() {
     if (!user) {
       setReturnView("orders");
@@ -464,6 +479,19 @@ function App() {
         type: "error",
         text: reason.message || "Không thể xóa sản phẩm.",
       });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function emptyCart() {
+    if (!window.confirm("Xóa tất cả sản phẩm khỏi giỏ hàng?")) return;
+    setBusy(true);
+    try {
+      setCart(await clearCart());
+      setFeedback({ type: "success", text: "Đã xóa toàn bộ sản phẩm khỏi giỏ hàng." });
+    } catch (reason) {
+      setFeedback({ type: "error", text: reason.response?.data?.message || reason.message || "Không thể xóa giỏ hàng." });
     } finally {
       setBusy(false);
     }
@@ -606,6 +634,7 @@ function App() {
           productImage={productImage}
           onChangeQuantity={changeQuantity}
           onRemoveItem={deleteItem}
+          onClearCart={emptyCart}
           onContinueShopping={() => setView("shop")}
           onCheckout={openCheckout}
         />
@@ -628,8 +657,11 @@ function App() {
         <OrdersPage
           orders={orders}
           loading={ordersLoading}
+          busy={busy}
+          onCancelOrder={cancelOrder}
           onShop={() => setView("shop")}
-          onReviewed={(orderId, productId) => setOrders((items) => items.map((order) => order._id === orderId ? { ...order, reviewedProductIds: [...(order.reviewedProductIds || []), String(productId)] } : order))}
+          onReviewed={(orderId, productId, reviewId) => setOrders((items) => items.map((order) => order._id === orderId ? { ...order, reviewedProductIds: [...(order.reviewedProductIds || []), String(productId)], reviewIdsByProduct: { ...(order.reviewIdsByProduct || {}), [String(productId)]: reviewId } } : order))}
+          onReviewDeleted={(orderId, productId) => setOrders((items) => items.map((order) => { if (order._id !== orderId) return order; const reviewIdsByProduct = { ...(order.reviewIdsByProduct || {}) }; delete reviewIdsByProduct[String(productId)]; return { ...order, reviewedProductIds: (order.reviewedProductIds || []).filter((id) => id !== String(productId)), reviewIdsByProduct }; }))}
         />
       )} />
       <Route path="/profile" element={protectedPage(

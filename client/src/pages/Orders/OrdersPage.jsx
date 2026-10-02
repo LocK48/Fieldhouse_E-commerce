@@ -1,32 +1,41 @@
 import { useState } from "react";
-import { createReview } from "../../api/review.api";
+import { createReview, deleteReview } from "../../api/review.api";
 import { formatCurrency, orderStatusLabels } from "../../utils/formatters";
 
-function OrderReview({ order, item, onReviewed }) {
+function OrderReview({ order, item, allowReview, onReviewed, onReviewDeleted }) {
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState("5");
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const productId = item.product?._id || item.product;
-  if (
-    order.orderStatus !== "DELIVERED" ||
-    !productId ||
-    order.reviewedProductIds?.includes(String(productId))
-  )
-    return null;
+  const reviewId = order.reviewIdsByProduct?.[String(productId)];
+  if (order.orderStatus !== "DELIVERED" || !productId || !allowReview) return null;
+  async function removeReview() {
+    if (!window.confirm("Xóa đánh giá này?")) return;
+    setDeleting(true);
+    try {
+      await deleteReview(reviewId);
+      onReviewDeleted(order._id, productId);
+    } catch (reason) {
+      setError(reason.response?.data?.message || reason.message || "Không xóa được đánh giá.");
+    } finally {
+      setDeleting(false);
+    }
+  }
   async function submit(event) {
     event.preventDefault();
     setSaving(true);
     setError("");
     try {
-      await createReview({
+      const review = await createReview({
         productId,
         orderId: order._id,
         rating: Number(rating),
         comment,
       });
-      onReviewed(order._id, productId);
+      onReviewed(order._id, productId, review._id);
       setOpen(false);
     } catch (reason) {
       setError(
@@ -40,7 +49,11 @@ function OrderReview({ order, item, onReviewed }) {
   }
   return (
     <div className="order-review">
-      {open ? (
+      {reviewId ? (
+        <button disabled={deleting} onClick={removeReview}>
+          {deleting ? "Đang xóa…" : "Xóa đánh giá"}
+        </button>
+      ) : open ? (
         <form onSubmit={submit}>
           <label>
             Đánh giá
@@ -70,11 +83,12 @@ function OrderReview({ order, item, onReviewed }) {
       ) : (
         <button onClick={() => setOpen(true)}>Viết đánh giá</button>
       )}
+      {error && !open && <small role="alert">{error}</small>}
     </div>
   );
 }
 
-export default function OrdersPage({ orders, loading, onShop, onReviewed }) {
+export default function OrdersPage({ orders, loading, busy, onShop, onReviewed, onReviewDeleted, onCancelOrder }) {
   return (
     <main className="commerce-page">
       <div className="page-heading">
@@ -108,6 +122,11 @@ export default function OrdersPage({ orders, loading, onShop, onReviewed }) {
                 >
                   {orderStatusLabels[order.orderStatus] || order.orderStatus}
                 </span>
+                {order.orderStatus === "PENDING" && (
+                  <button className="remove-link" disabled={busy} onClick={() => onCancelOrder(order)}>
+                    {busy ? "Đang hủy…" : "Hủy đơn"}
+                  </button>
+                )}
               </header>
               <div className="order-card-items">
                 {order.items.map((item, index) => (
@@ -131,7 +150,9 @@ export default function OrdersPage({ orders, loading, onShop, onReviewed }) {
                     <OrderReview
                       order={order}
                       item={item}
+                      allowReview={order.items.findIndex((orderItem) => String(orderItem.product?._id || orderItem.product) === String(item.product?._id || item.product)) === index}
                       onReviewed={onReviewed}
+                      onReviewDeleted={onReviewDeleted}
                     />
                   </div>
                 ))}
@@ -154,7 +175,7 @@ export default function OrdersPage({ orders, loading, onShop, onReviewed }) {
                   {order.paymentMethod || "COD"} ·{" "}
                   {order.paymentStatus === "PAID"
                     ? "Đã thanh toán"
-                    : "Thanh toán khi nhận"}
+                    : order.paymentStatus === "CANCELLED" ? "Đã hủy thanh toán" : "Thanh toán khi nhận"}
                 </span>
                 <strong>{formatCurrency(order.total)}</strong>
               </footer>

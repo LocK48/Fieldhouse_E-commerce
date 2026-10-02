@@ -5,6 +5,10 @@ export async function createReview(data) {
   return response.data.data.review;
 }
 
+export async function deleteReview(reviewId) {
+  await api.delete(`/reviews/${reviewId}`);
+}
+
 export async function getProductReviews(productId, params = {}) {
   const query = new URLSearchParams(
     Object.entries(params).filter(

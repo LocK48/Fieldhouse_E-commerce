@@ -12,10 +12,17 @@ router.get(
   validate(schemas.reviewQuery, "query"),
   asyncHandler(controller.getProductReviews),
 );
+
 router.post(
   "/",
   authenticate,
   validate(schemas.reviewCreate),
   asyncHandler(controller.createReview),
+);
+router.delete(
+  "/:reviewId",
+  authenticate,
+  validate(schemas.idParams("reviewId"), "params"),
+  asyncHandler(controller.deleteReview),
 );
 module.exports = router;

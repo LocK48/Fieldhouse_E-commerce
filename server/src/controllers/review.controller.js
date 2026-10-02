@@ -11,4 +11,8 @@ const createReview = async (req, res) =>
       success: true,
       data: { review: await service.createReview(req.user._id, req.body) },
     });
-module.exports = { getProductReviews, createReview };
+const deleteReview = async (req, res) => {
+  await service.deleteReview(req.user._id, req.params.reviewId);
+  res.json({ success: true, message: "Review deleted" });
+};
+module.exports = { getProductReviews, createReview, deleteReview };

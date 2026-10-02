@@ -81,4 +81,17 @@ const createReview = async (
   return review;
 };
 
-module.exports = { getProductReviews, createReview };
+const deleteReview = async (userId, reviewId) => {
+  const review = await Review.findOneAndDelete({ _id: reviewId, user: userId });
+  if (!review) throw new AppError("Review not found", 404);
+  const [summary] = await Review.aggregate([
+    { $match: { product: review.product, isPublished: true } },
+    { $group: { _id: "$product", average: { $avg: "$rating" }, count: { $sum: 1 } } },
+  ]);
+  await Product.updateOne(
+    { _id: review.product },
+    { $set: { averageRating: summary?.average || 0, reviewCount: summary?.count || 0 } },
+  );
+};
+
+module.exports = { getProductReviews, createReview, deleteReview };

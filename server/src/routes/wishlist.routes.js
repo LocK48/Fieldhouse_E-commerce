@@ -13,6 +13,7 @@ router.put(
   validate(schemas.idParams("productId"), "params"),
   asyncHandler(controller.addProduct),
 );
+
 router.delete(
   "/:productId",
   validate(schemas.idParams("productId"), "params"),

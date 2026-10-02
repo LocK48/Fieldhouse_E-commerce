@@ -9,6 +9,7 @@ export default function CartPage({
   productImage,
   onChangeQuantity,
   onRemoveItem,
+  onClearCart,
   onContinueShopping,
   onCheckout,
 }) {
@@ -22,7 +23,7 @@ export default function CartPage({
         <h1>
           Những món đồ <em>bạn chọn.</em>
         </h1>
-        <p>{cartCount} sản phẩm</p>
+        <p>{cartCount} sản phẩm {cartCount > 0 && <button className="remove-link" disabled={busy} onClick={onClearCart}>Xóa tất cả</button>}</p>
       </div>
       {!cart.items.length ? (
         <div className="commerce-empty">

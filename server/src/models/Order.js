@@ -8,6 +8,11 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
     },
 
+    variantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
@@ -140,7 +145,7 @@ const orderSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["PENDING", "PAID", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"],
+      enum: ["PENDING", "PAID", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED", "CANCELLED"],
       default: "PENDING",
       index: true,
     },

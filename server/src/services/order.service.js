@@ -117,6 +117,7 @@ const createCodOrder = async (userId, shippingAddressInput) => {
         subtotal += lineSubtotal;
         orderItems.push({
           product: product._id,
+          variantId: variant._id,
           store: store._id,
           name: product.name,
           sku: variant.sku,
@@ -194,16 +195,19 @@ const getMyOrders = async (userId, { page = 1, limit = 10 } = {}) => {
     Order.countDocuments(filter),
   ]);
 
-  const existingReviews = orders.length ? await Review.find({ user: userId, order: { $in: orders.map((order) => order._id) } }).select("order product").lean() : [];
-  const reviewedByOrder = new Map();
+  const existingReviews = orders.length ? await Review.find({ user: userId, order: { $in: orders.map((order) => order._id) } }).select("_id order product").lean() : [];
+  const reviewsByOrder = new Map();
   for (const review of existingReviews) {
     const orderId = review.order.toString();
-    if (!reviewedByOrder.has(orderId)) reviewedByOrder.set(orderId, []);
-    reviewedByOrder.get(orderId).push(review.product.toString());
+    if (!reviewsByOrder.has(orderId)) reviewsByOrder.set(orderId, {});
+    reviewsByOrder.get(orderId)[review.product.toString()] = review._id.toString();
   }
 
   return {
-    orders: orders.map((order) => ({ ...order, reviewedProductIds: reviewedByOrder.get(order._id.toString()) || [] })),
+    orders: orders.map((order) => {
+      const reviewIdsByProduct = reviewsByOrder.get(order._id.toString()) || {};
+      return { ...order, reviewIdsByProduct, reviewedProductIds: Object.keys(reviewIdsByProduct) };
+    }),
     pagination: {
       page: pageNumber,
       limit: limitNumber,
@@ -221,8 +225,57 @@ const getMyOrderById = async (userId, orderId) => {
   return order;
 };
 
+const cancelMyOrder = async (userId, orderId) => {
+  const session = await mongoose.startSession();
+  let cancelledOrder;
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({ _id: orderId, user: userId }).session(session);
+      if (!order) throw new AppError("Order not found", 404);
+      if (order.orderStatus !== "PENDING") {
+        throw new AppError("Only pending orders can be cancelled", 400);
+      }
+      if (order.paymentMethod !== "COD") {
+        throw new AppError("Only cash-on-delivery orders can be cancelled here", 400);
+      }
+
+      for (const item of order.items) {
+        if (!item.variantId) {
+          throw new AppError("Cannot restore stock for this legacy order", 409);
+        }
+        const restored = await Product.updateOne(
+          { _id: item.product, "variants._id": item.variantId },
+          { $inc: { "variants.$.stock": item.quantity } },
+          { session },
+        );
+        if (restored.modifiedCount !== 1) {
+          throw new AppError("A product variant no longer exists; contact support to cancel this order", 409);
+        }
+      }
+
+      const result = await Order.updateOne(
+        { _id: order._id, user: userId, orderStatus: "PENDING" },
+        { $set: { orderStatus: "CANCELLED", paymentStatus: "CANCELLED" } },
+        { session, runValidators: true },
+      );
+      if (result.modifiedCount !== 1) throw new AppError("Order status changed; refresh and retry", 409);
+      const paymentUpdate = await Payment.updateOne(
+        { order: order._id, status: "PENDING" },
+        { $set: { status: "CANCELLED" } },
+        { session },
+      );
+      if (paymentUpdate.modifiedCount !== 1) throw new AppError("Pending payment record not found", 409);
+      cancelledOrder = { ...order.toObject(), orderStatus: "CANCELLED", paymentStatus: "CANCELLED" };
+    });
+  } finally {
+    await session.endSession();
+  }
+  return cancelledOrder;
+};
+
 module.exports = {
   createCodOrder,
   getMyOrders,
   getMyOrderById,
+  cancelMyOrder,
 };

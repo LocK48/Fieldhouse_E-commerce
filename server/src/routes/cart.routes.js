@@ -15,13 +15,17 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get("/", asyncHandler(getCart));
+
 router.post("/items", validate(schemas.cartAdd), asyncHandler(addItem));
+
 router.patch(
   "/items",
   validate(schemas.cartUpdate),
   asyncHandler(updateItemQuantity),
 );
+
 router.delete("/items", validate(schemas.cartRemove), asyncHandler(removeItem));
+
 router.delete("/", asyncHandler(clearCart));
 
 module.exports = router;
