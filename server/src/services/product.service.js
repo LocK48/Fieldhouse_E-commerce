@@ -54,9 +54,14 @@ const getProductById = async (productId) => {
     status: "ACTIVE",
   })
     .populate("category", "name slug")
-    .populate("store", "name slug logo");
+    .populate({
+      path: "store",
+      select: "name slug logo description owner status",
+      match: { status: "ACTIVE" },
+      populate: { path: "owner", select: "name avatar" },
+    });
 
-  if (!product) {
+  if (!product || !product.store) {
     throw new AppError("Product not found", 404);
   }
 

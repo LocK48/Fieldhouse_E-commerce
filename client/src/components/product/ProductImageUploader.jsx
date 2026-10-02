@@ -3,8 +3,10 @@ import { useState } from "react";
 import { uploadProductImage } from "../../utils/uploadFile";
 
 import { deleteProductImage } from "../../api/upload.api";
+import { useFeedback } from "../ui/FeedbackContext";
 
 export default function ProductImageUploader({ productId, images, onChange }) {
+  const { showToast } = useFeedback();
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (event) => {
@@ -28,7 +30,7 @@ export default function ProductImageUploader({ productId, images, onChange }) {
     } catch (error) {
       console.error(error);
 
-      alert("Failed to upload image");
+      showToast("Không tải ảnh lên được. Hãy thử lại.", "error");
     } finally {
       setUploading(false);
 
@@ -47,7 +49,7 @@ export default function ProductImageUploader({ productId, images, onChange }) {
     } catch (error) {
       console.error(error);
 
-      alert("Failed to delete image");
+      showToast("Không xóa ảnh được. Hãy thử lại.", "error");
     }
   };
 

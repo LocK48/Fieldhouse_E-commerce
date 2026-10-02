@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { createCategory, deleteCategory, getCategories, updateCategory } from '../../api/category.api'
+import { useFeedback } from '../../components/ui/FeedbackContext'
 
 const emptyForm = { name: '', slug: '', description: '', sortOrder: 0 }
 const toSlug = (value) => value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 export default function CategoryManager({ onFeedback, onCategoriesChanged }) {
+  const { confirm } = useFeedback()
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState('')
@@ -37,7 +39,12 @@ export default function CategoryManager({ onFeedback, onCategoriesChanged }) {
   }
 
   async function archive(category) {
-    if (!window.confirm(`Ẩn danh mục “${category.name}”?`)) return
+    const accepted = await confirm({
+      title: 'Ẩn danh mục?',
+      description: `“${category.name}” sẽ không còn hiển thị trong cửa hàng.`,
+      confirmLabel: 'Ẩn danh mục',
+    })
+    if (!accepted) return
     try {
       await deleteCategory(category._id)
       await reload()

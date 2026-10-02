@@ -19,7 +19,7 @@ import {
 } from "./api/wishlist.api";
 import AuthDialog from "./components/auth/AuthDialog";
 import SiteHeader from "./components/layout/SiteHeader";
-import ProductDialog from "./components/product/ProductDialog";
+import { useFeedback } from "./components/ui/FeedbackContext";
 import CartPage from "./pages/Cart/CartPage";
 import CheckoutPage from "./pages/Checkout/CheckoutPage";
 import HomePage from "./pages/Home/HomePage";
@@ -28,20 +28,26 @@ import SellerPage from "./pages/Seller/SellerPage";
 import AdminPage from "./pages/Admin/AdminPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import WishlistPage from "./pages/Wishlist/WishlistPage";
+import ProductsPage from "./pages/Products/ProductsPage";
+import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
 import mercurialImage from "../../mercurial.webp";
 import "./App.css";
 import "./Commerce.css";
 import "./Dashboard.css";
 import "./Account.css";
+import "./ProductPages.css";
 
 const freeShippingThreshold = 1_500_000;
 const standardShipping = 30_000;
 
 function App() {
+  const { confirm, showToast } = useFeedback();
+  const setFeedback = ({ type, text }) => showToast(text, type);
   const location = useLocation();
   const navigate = useNavigate();
-  const view = ({
+  const view = location.pathname.startsWith("/products/") ? "product-detail" : ({
     "/": "shop",
+    "/products": "products",
     "/cart": "cart",
     "/checkout": "checkout",
     "/orders": "orders",
@@ -53,6 +59,7 @@ function App() {
   const setView = (nextView) => {
     const paths = {
       shop: "/",
+      products: "/products",
       cart: "/cart",
       checkout: "/checkout",
       orders: "/orders",
@@ -60,11 +67,11 @@ function App() {
       wishlist: "/wishlist",
       management: "/seller",
     };
-    navigate(nextView === "management" && user?.role === "ADMIN" ? "/admin" : paths[nextView] || "/");
+    navigate(nextView.startsWith("/") ? nextView : nextView === "management" && user?.role === "ADMIN" ? "/admin" : paths[nextView] || "/");
   };
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [query, setQuery] = useState("");
+  const query = new URLSearchParams(location.search).get("search") || "";
   const [category, setCategory] = useState("Tất cả");
   const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(1);
@@ -80,14 +87,11 @@ function App() {
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedVariantId, setSelectedVariantId] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [pendingAdd, setPendingAdd] = useState(null);
   const [pendingWishlistProduct, setPendingWishlistProduct] = useState(null);
   const [returnView, setReturnView] = useState("shop");
-  const [feedback, setFeedback] = useState(null);
   const [busy, setBusy] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -216,7 +220,6 @@ function App() {
       setCart(
         await addCartItem({ productId: product._id, variantId, quantity: 1 }),
       );
-      setSelectedProduct(null);
       setFeedback({ type: "success", text: "Đã thêm sản phẩm vào giỏ hàng." });
     } catch (reason) {
       setFeedback({
@@ -231,8 +234,7 @@ function App() {
   async function toggleWishlist(product) {
     if (!user) {
       setPendingWishlistProduct(product);
-      setReturnView("shop");
-      setSelectedProduct(null);
+      setReturnView(view === "product-detail" ? `${location.pathname}${location.search}` : "shop");
       setAuthOpen(true);
       return;
     }
@@ -303,8 +305,7 @@ function App() {
   function requestAddToCart(product, variantId) {
     if (!user) {
       setPendingAdd({ product, variantId });
-      setReturnView("shop");
-      setSelectedProduct(null);
+      setReturnView(view === "product-detail" ? `${location.pathname}${location.search}` : "shop");
       setAuthOpen(true);
       return;
     }
@@ -341,6 +342,7 @@ function App() {
     if (pendingAdd) {
       const queuedItem = pendingAdd;
       setPendingAdd(null);
+      setView(returnView);
       await putItemInCart(queuedItem.product, queuedItem.variantId);
       return;
     }
@@ -415,7 +417,12 @@ function App() {
   }
 
   async function cancelOrder(order) {
-    if (!window.confirm(`Hủy đơn hàng #${order._id.slice(-8).toUpperCase()}?`)) return;
+    const accepted = await confirm({
+      title: "Hủy đơn hàng?",
+      description: `Đơn #${order._id.slice(-8).toUpperCase()} sẽ được hủy và tồn kho được hoàn lại.`,
+      confirmLabel: "Hủy đơn hàng",
+    });
+    if (!accepted) return;
     setBusy(true);
     try {
       const updatedOrder = await cancelMyOrder(order._id);
@@ -485,7 +492,12 @@ function App() {
   }
 
   async function emptyCart() {
-    if (!window.confirm("Xóa tất cả sản phẩm khỏi giỏ hàng?")) return;
+    const accepted = await confirm({
+      title: "Xóa toàn bộ giỏ hàng?",
+      description: "Tất cả sản phẩm trong giỏ sẽ bị xóa.",
+      confirmLabel: "Xóa tất cả",
+    });
+    if (!accepted) return;
     setBusy(true);
     try {
       setCart(await clearCart());
@@ -536,10 +548,7 @@ function App() {
   }
 
   function openProduct(product) {
-    setSelectedProduct(product);
-    setSelectedVariantId(
-      product.variants?.find((item) => item.isActive)?._id || "",
-    );
+    navigate(`/products/${product._id}`, { state: { from: `${location.pathname}${location.search}` } });
   }
 
   function closeAuth() {
@@ -554,7 +563,7 @@ function App() {
     : null;
 
   return (
-    <div className="app-shell mx-auto min-h-screen w-full max-w-[1440px] overflow-hidden bg-[#faf9f6] text-[#18211d]">
+    <div className="app-shell mx-0 min-h-screen w-full max-w-none overflow-hidden bg-[#faf9f6] text-[#18211d]">
       <div className="announcement">
         Giao hàng miễn phí cho đơn từ 1.500.000₫ <span>·</span> Thanh toán khi
         nhận hàng
@@ -566,9 +575,9 @@ function App() {
         query={query}
         accountMenuOpen={accountMenuOpen}
         onQueryChange={(value) => {
-          setQuery(value);
           setPage(1);
-          setView("shop");
+          const search = value.trim();
+          navigate(search ? `/products?search=${encodeURIComponent(search)}` : "/products", { replace: true });
         }}
         onGoShop={() => {
           setView("shop");
@@ -586,15 +595,6 @@ function App() {
         onOpenProfile={openProfile}
         onOpenWishlist={openWishlist}
       />
-
-      {feedback && (
-        <div className={`feedback feedback-${feedback.type}`} role="status">
-          <span>{feedback.text}</span>
-          <button onClick={() => setFeedback(null)} aria-label="Đóng thông báo">
-            ×
-          </button>
-        </div>
-      )}
 
       <Routes>
       <Route path="/" element={
@@ -622,6 +622,36 @@ function App() {
             wishlist.some((item) => item._id === product._id)
           }
           onToggleWishlist={toggleWishlist}
+        />
+      } />
+      <Route path="/products" element={
+        <ProductsPage
+          products={products}
+          categories={categories}
+          category={category}
+          onCategoryChange={(value) => { setCategory(value); setPage(1); }}
+          sort={sort}
+          onSortChange={(value) => { setSort(value); setPage(1); }}
+          page={page}
+          onPageChange={setPage}
+          pagination={pagination}
+          loading={loading}
+          error={catalogError}
+          search={query}
+          productImage={productImage}
+          onOpenProduct={openProduct}
+          isWishlisted={(product) => wishlist.some((item) => item._id === product._id)}
+          onToggleWishlist={toggleWishlist}
+        />
+      } />
+      <Route path="/products/:productId" element={
+        <ProductDetailPage
+          key={location.pathname}
+          busy={busy}
+          productImage={productImage}
+          isWishlisted={(product) => wishlist.some((item) => item._id === product._id)}
+          onToggleWishlist={toggleWishlist}
+          onAddToCart={requestAddToCart}
         />
       } />
       <Route path="/cart" element={protectedPage(
@@ -710,21 +740,6 @@ function App() {
         <span>© 2026 FIELDHOUSE</span>
       </footer>
 
-      {selectedProduct && (
-        <ProductDialog
-          product={selectedProduct}
-          variantId={selectedVariantId}
-          busy={busy}
-          productImage={productImage}
-          isWishlisted={wishlist.some(
-            (item) => item._id === selectedProduct._id,
-          )}
-          onToggleWishlist={toggleWishlist}
-          onVariantChange={setSelectedVariantId}
-          onAddToCart={requestAddToCart}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
       {authOpen && <AuthDialog onClose={closeAuth} onSubmit={handleAuth} />}
     </div>
   );

@@ -1,4 +1,5 @@
-import { formatCurrency } from "../../utils/formatters";
+import ProductCard from "../../components/product/ProductCard";
+import { Link } from "react-router-dom";
 
 export default function HomePage({
   products,
@@ -107,9 +108,9 @@ export default function HomePage({
               Sẵn sàng cho <em>cuộc chơi.</em>
             </h2>
           </div>
-          <a href="#products" className="text-link">
+          <Link to="/products" className="text-link">
             Xem tất cả ↗
-          </a>
+          </Link>
         </div>
         <div className="shop-controls">
           <div
@@ -156,53 +157,7 @@ export default function HomePage({
           </div>
         ) : products.length ? (
           <div className="product-grid">
-            {products.map((product, index) => (
-              <article className="product-card" key={product._id}>
-                <button
-                  className="product-image"
-                  onClick={() => onOpenProduct(product)}
-                  aria-label={`Xem ${product.name}`}
-                >
-                  <div className={`product-art art-${index % 4}`}>
-                    {productImage(product) ? (
-                      <img
-                        src={productImage(product)}
-                        alt={product.images?.[0]?.alt || product.name}
-                      />
-                    ) : (
-                      <span>{product.category?.name?.slice(0, 1) || "F"}</span>
-                    )}
-                    <b className="product-tag">
-                      {product.category?.name || "FIELDHOUSE"}
-                    </b>
-                    <b className="quick-view">Xem nhanh ↗</b>
-                  </div>
-                </button>
-                <div className="product-meta">
-                  <div>
-                    <p>
-                      {product.brand || product.store?.name || "FIELDHOUSE"}
-                    </p>
-                    <h3>{product.name}</h3>
-                  </div>
-                  <span className="save-button" role="button" tabIndex={0} aria-label={isWishlisted?.(product) ? "Bỏ yêu thích" : "Thêm yêu thích"} onClick={() => onToggleWishlist?.(product)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onToggleWishlist?.(product) }}>
-                    ♡
-                  </span>
-                </div>
-                <div className="product-price">
-                  <strong>
-                    {formatCurrency(
-                      product.priceRange?.min ??
-                        product.variants?.[0]?.price ??
-                        0,
-                    )}
-                  </strong>
-                  {product.averageRating > 0 && (
-                    <span>★ {product.averageRating.toFixed(1)}</span>
-                  )}
-                </div>
-              </article>
-            ))}
+            {products.map((product, index) => <ProductCard key={product._id} product={product} index={index} productImage={productImage} onOpenProduct={onOpenProduct} isWishlisted={isWishlisted} onToggleWishlist={onToggleWishlist} />)}
           </div>
         ) : (
           <div className="empty-state">

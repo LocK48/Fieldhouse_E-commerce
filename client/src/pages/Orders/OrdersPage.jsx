@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { createReview, deleteReview } from "../../api/review.api";
 import { formatCurrency, orderStatusLabels } from "../../utils/formatters";
+import { useFeedback } from "../../components/ui/FeedbackContext";
 
 function OrderReview({ order, item, allowReview, onReviewed, onReviewDeleted }) {
+  const { confirm } = useFeedback();
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState("5");
   const [comment, setComment] = useState("");
@@ -13,7 +15,12 @@ function OrderReview({ order, item, allowReview, onReviewed, onReviewDeleted }) 
   const reviewId = order.reviewIdsByProduct?.[String(productId)];
   if (order.orderStatus !== "DELIVERED" || !productId || !allowReview) return null;
   async function removeReview() {
-    if (!window.confirm("Xóa đánh giá này?")) return;
+    const accepted = await confirm({
+      title: "Xóa đánh giá?",
+      description: "Đánh giá sẽ bị gỡ khỏi sản phẩm. Bạn có thể viết lại sau.",
+      confirmLabel: "Xóa đánh giá",
+    });
+    if (!accepted) return;
     setDeleting(true);
     try {
       await deleteReview(reviewId);

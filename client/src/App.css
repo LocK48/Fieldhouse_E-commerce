@@ -2,8 +2,9 @@
   min-height: 100vh;
 }
 .app-shell {
-  max-width: 1440px;
-  margin: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   background: #faf9f6;
   overflow: hidden;
 }

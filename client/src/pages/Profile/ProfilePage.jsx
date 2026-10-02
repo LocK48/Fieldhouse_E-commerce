@@ -6,6 +6,7 @@ import {
   updateAddress,
 } from "../../api/address.api";
 import { changePassword, updateProfile } from "../../api/user.api";
+import { useFeedback } from "../../components/ui/FeedbackContext";
 
 const emptyAddress = {
   recipientName: "",
@@ -27,6 +28,7 @@ const addressFields = [
 ];
 
 export default function ProfilePage({ user, onUserChange, onFeedback }) {
+  const { confirm } = useFeedback();
   const [name, setName] = useState(user.name || "");
   const [addresses, setAddresses] = useState([]);
   const [addressForm, setAddressForm] = useState(emptyAddress);
@@ -112,7 +114,12 @@ export default function ProfilePage({ user, onUserChange, onFeedback }) {
   }
 
   async function removeAddress(address) {
-    if (!window.confirm(`Xóa địa chỉ của ${address.recipientName}?`)) return;
+    const accepted = await confirm({
+      title: "Xóa địa chỉ?",
+      description: `Địa chỉ của ${address.recipientName} sẽ bị xóa khỏi sổ địa chỉ.`,
+      confirmLabel: "Xóa địa chỉ",
+    });
+    if (!accepted) return;
     try {
       await deleteAddress(address._id);
       await reloadAddresses();

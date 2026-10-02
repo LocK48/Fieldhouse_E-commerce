@@ -4,6 +4,7 @@ import { getMyStore, createStore } from "../../api/store.api";
 import { deleteProduct, getMyProducts } from "../../api/product.api";
 import ProductForm from "../../components/product/ProductForm";
 import { formatCurrency } from "../../utils/formatters";
+import { useFeedback } from "../../components/ui/FeedbackContext";
 
 const statusLabels = {
   PENDING: "Đang chờ duyệt",
@@ -18,6 +19,7 @@ export default function SellerPage({
   onFeedback,
   productImage,
 }) {
+  const { confirm } = useFeedback();
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(user.role === "SELLER");
@@ -122,7 +124,12 @@ export default function SellerPage({
   }
 
   async function archiveProduct(product) {
-    if (!window.confirm(`Lưu trữ sản phẩm “${product.name}”?`)) return;
+    const accepted = await confirm({
+      title: "Lưu trữ sản phẩm?",
+      description: `“${product.name}” sẽ được gỡ khỏi cửa hàng.`,
+      confirmLabel: "Lưu trữ",
+    });
+    if (!accepted) return;
     try {
       await deleteProduct(product._id);
       setProducts((items) => items.filter((item) => item._id !== product._id));

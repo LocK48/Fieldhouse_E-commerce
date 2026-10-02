@@ -31,7 +31,7 @@ export default function SiteHeader({
       </a>
       <nav className="main-nav" aria-label="Điều hướng">
         <a
-          className={view === "shop" ? "active" : ""}
+          className={["shop", "products", "product-detail"].includes(view) ? "active" : ""}
           href="#products"
           onClick={onGoShop}
         >
