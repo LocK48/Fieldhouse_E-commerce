@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import {
   addCartItem,
   clearCart,
@@ -36,6 +42,7 @@ import SellerLayout from "./components/layout/SellerLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import ChatWorkspace from "./components/chat/ChatWorkspace";
 import CustomerChatWidget from "./components/chat/CustomerChatWidget";
+import { useCommerceStore } from "./store/useCommerceStore";
 import mercurialImage from "../../mercurial.webp";
 import "./App.css";
 import "./Commerce.css";
@@ -51,19 +58,21 @@ function App() {
   const setFeedback = ({ type, text }) => showToast(text, type);
   const location = useLocation();
   const navigate = useNavigate();
-  const view = location.pathname.startsWith("/products/") ? "product-detail" : ({
-    "/": "shop",
-    "/products": "products",
-    "/cart": "cart",
-    "/checkout": "checkout",
-    "/orders": "orders",
-    "/profile": "profile",
-    "/wishlist": "wishlist",
-    "/seller": "management",
-    "/seller/messages": "management",
-    "/admin": "management",
-    "/admin/messages": "management",
-  })[location.pathname] || "shop";
+  const view = location.pathname.startsWith("/products/")
+    ? "product-detail"
+    : {
+        "/": "shop",
+        "/products": "products",
+        "/cart": "cart",
+        "/checkout": "checkout",
+        "/orders": "orders",
+        "/profile": "profile",
+        "/wishlist": "wishlist",
+        "/seller": "management",
+        "/seller/messages": "management",
+        "/admin": "management",
+        "/admin/messages": "management",
+      }[location.pathname] || "shop";
   const setView = (nextView) => {
     const paths = {
       shop: "/",
@@ -75,7 +84,13 @@ function App() {
       wishlist: "/wishlist",
       management: "/seller",
     };
-    navigate(nextView.startsWith("/") ? nextView : nextView === "management" && user?.role === "ADMIN" ? "/admin" : paths[nextView] || "/");
+    navigate(
+      nextView.startsWith("/")
+        ? nextView
+        : nextView === "management" && user?.role === "ADMIN"
+          ? "/admin"
+          : paths[nextView] || "/",
+    );
   };
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -86,15 +101,21 @@ function App() {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState("");
-  const [user, setUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(() =>
-    !localStorage.getItem("fieldhouse-access-token") &&
-    !localStorage.getItem("fieldhouse-refresh-token"),
+  const user = useCommerceStore((state) => state.user);
+  const setUser = useCommerceStore((state) => state.setUser);
+  const [authChecked, setAuthChecked] = useState(
+    () =>
+      !localStorage.getItem("fieldhouse-access-token") &&
+      !localStorage.getItem("fieldhouse-refresh-token"),
   );
-  const [cart, setCart] = useState({ items: [], subtotal: 0 });
-  const [wishlist, setWishlist] = useState([]);
+  const cart = useCommerceStore((state) => state.cart);
+  const setCart = useCommerceStore((state) => state.setCart);
+  const wishlist = useCommerceStore((state) => state.wishlist);
+  const setWishlist = useCommerceStore((state) => state.setWishlist);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-  const [addresses, setAddresses] = useState([]);
+  const addresses = useCommerceStore((state) => state.addresses);
+  const setAddresses = useCommerceStore((state) => state.setAddresses);
+  const clearCommerceState = useCommerceStore((state) => state.clearCommerceState);
   const [authOpen, setAuthOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [pendingAdd, setPendingAdd] = useState(null);
@@ -122,7 +143,11 @@ function App() {
     }
     if (!user) {
       setPendingChat({ storeId });
-      setReturnView(view === "product-detail" ? `${location.pathname}${location.search}` : "shop");
+      setReturnView(
+        view === "product-detail"
+          ? `${location.pathname}${location.search}`
+          : "shop",
+      );
       setAuthOpen(true);
       return;
     }
@@ -153,7 +178,7 @@ function App() {
     getAddresses()
       .then(setAddresses)
       .catch(() => setAddresses([]));
-  }, [userId]);
+  }, [userId, setAddresses, setWishlist]);
 
   useEffect(() => {
     let active = true;
@@ -223,7 +248,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [setCart, setUser]);
 
   function productImage(product) {
     return (
@@ -258,7 +283,11 @@ function App() {
   async function toggleWishlist(product) {
     if (!user) {
       setPendingWishlistProduct(product);
-      setReturnView(view === "product-detail" ? `${location.pathname}${location.search}` : "shop");
+      setReturnView(
+        view === "product-detail"
+          ? `${location.pathname}${location.search}`
+          : "shop",
+      );
       setAuthOpen(true);
       return;
     }
@@ -329,7 +358,11 @@ function App() {
   function requestAddToCart(product, variantId) {
     if (!user) {
       setPendingAdd({ product, variantId });
-      setReturnView(view === "product-detail" ? `${location.pathname}${location.search}` : "shop");
+      setReturnView(
+        view === "product-detail"
+          ? `${location.pathname}${location.search}`
+          : "shop",
+      );
       setAuthOpen(true);
       return;
     }
@@ -391,7 +424,10 @@ function App() {
     if (pendingChat) {
       const target = pendingChat;
       setPendingChat(null);
-      setChatStartRequest((current) => ({ id: (current?.id || 0) + 1, storeId: target.storeId }));
+      setChatStartRequest((current) => ({
+        id: (current?.id || 0) + 1,
+        storeId: target.storeId,
+      }));
     }
 
     setView(returnView);
@@ -404,11 +440,8 @@ function App() {
     } catch {
       /* Clear local state even if the API is unavailable. */
     }
-    setUser(null);
-    setCart({ items: [], subtotal: 0 });
+    clearCommerceState();
     setOrders([]);
-    setWishlist([]);
-    setAddresses([]);
     setAccountMenuOpen(false);
     setView("shop");
     setFeedback({ type: "success", text: "Bạn đã đăng xuất." });
@@ -456,10 +489,21 @@ function App() {
     setBusy(true);
     try {
       const updatedOrder = await cancelMyOrder(order._id);
-      setOrders((items) => items.map((item) => item._id === order._id ? updatedOrder : item));
-      setFeedback({ type: "success", text: "Đã hủy đơn hàng. Tồn kho đã được hoàn lại." });
+      setOrders((items) =>
+        items.map((item) => (item._id === order._id ? updatedOrder : item)),
+      );
+      setFeedback({
+        type: "success",
+        text: "Đã hủy đơn hàng. Tồn kho đã được hoàn lại.",
+      });
     } catch (reason) {
-      setFeedback({ type: "error", text: reason.response?.data?.message || reason.message || "Không thể hủy đơn hàng." });
+      setFeedback({
+        type: "error",
+        text:
+          reason.response?.data?.message ||
+          reason.message ||
+          "Không thể hủy đơn hàng.",
+      });
     } finally {
       setBusy(false);
     }
@@ -531,9 +575,18 @@ function App() {
     setBusy(true);
     try {
       setCart(await clearCart());
-      setFeedback({ type: "success", text: "Đã xóa toàn bộ sản phẩm khỏi giỏ hàng." });
+      setFeedback({
+        type: "success",
+        text: "Đã xóa toàn bộ sản phẩm khỏi giỏ hàng.",
+      });
     } catch (reason) {
-      setFeedback({ type: "error", text: reason.response?.data?.message || reason.message || "Không thể xóa giỏ hàng." });
+      setFeedback({
+        type: "error",
+        text:
+          reason.response?.data?.message ||
+          reason.message ||
+          "Không thể xóa giỏ hàng.",
+      });
     } finally {
       setBusy(false);
     }
@@ -578,7 +631,9 @@ function App() {
   }
 
   function openProduct(product) {
-    navigate(`/products/${product._id}`, { state: { from: `${location.pathname}${location.search}` } });
+    navigate(`/products/${product._id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   }
 
   function closeAuth() {
@@ -589,9 +644,8 @@ function App() {
     setReturnView("shop");
   }
 
-  const protectedPage = (content) => authChecked
-    ? user ? content : <Navigate to="/" replace />
-    : null;
+  const protectedPage = (content) =>
+    authChecked ? user ? content : <Navigate to="/" replace /> : null;
 
   return (
     <div className="app-shell mx-0 min-h-screen w-full max-w-none overflow-hidden bg-[#faf9f6] text-[#18211d]">
@@ -608,7 +662,12 @@ function App() {
         onQueryChange={(value) => {
           setPage(1);
           const search = value.trim();
-          navigate(search ? `/products?search=${encodeURIComponent(search)}` : "/products", { replace: true });
+          navigate(
+            search
+              ? `/products?search=${encodeURIComponent(search)}`
+              : "/products",
+            { replace: true },
+          );
         }}
         onGoShop={() => {
           setView("shop");
@@ -629,140 +688,282 @@ function App() {
       />
 
       <Routes>
-      <Route path="/" element={
-        <HomePage
-          products={products}
-          categories={categories}
-          category={category}
-          onCategoryChange={(value) => {
-            setCategory(value);
-            setPage(1);
-          }}
-          sort={sort}
-          onSortChange={(value) => {
-            setSort(value);
-            setPage(1);
-          }}
-          page={page}
-          onPageChange={setPage}
-          pagination={pagination}
-          loading={loading}
-          error={catalogError}
-          productImage={productImage}
-          onOpenProduct={openProduct}
-          isWishlisted={(product) =>
-            wishlist.some((item) => item._id === product._id)
+        <Route
+          path="/"
+          element={
+            <HomePage
+              products={products}
+              categories={categories}
+              category={category}
+              onCategoryChange={(value) => {
+                setCategory(value);
+                setPage(1);
+              }}
+              sort={sort}
+              onSortChange={(value) => {
+                setSort(value);
+                setPage(1);
+              }}
+              page={page}
+              onPageChange={setPage}
+              pagination={pagination}
+              loading={loading}
+              error={catalogError}
+              productImage={productImage}
+              onOpenProduct={openProduct}
+              isWishlisted={(product) =>
+                wishlist.some((item) => item._id === product._id)
+              }
+              onToggleWishlist={toggleWishlist}
+            />
           }
-          onToggleWishlist={toggleWishlist}
         />
-      } />
-      <Route path="/products" element={
-        <ProductsPage
-          products={products}
-          categories={categories}
-          category={category}
-          onCategoryChange={(value) => { setCategory(value); setPage(1); }}
-          sort={sort}
-          onSortChange={(value) => { setSort(value); setPage(1); }}
-          page={page}
-          onPageChange={setPage}
-          pagination={pagination}
-          loading={loading}
-          error={catalogError}
-          search={query}
-          productImage={productImage}
-          onOpenProduct={openProduct}
-          isWishlisted={(product) => wishlist.some((item) => item._id === product._id)}
-          onToggleWishlist={toggleWishlist}
+        <Route
+          path="/products"
+          element={
+            <ProductsPage
+              products={products}
+              categories={categories}
+              category={category}
+              onCategoryChange={(value) => {
+                setCategory(value);
+                setPage(1);
+              }}
+              sort={sort}
+              onSortChange={(value) => {
+                setSort(value);
+                setPage(1);
+              }}
+              page={page}
+              onPageChange={setPage}
+              pagination={pagination}
+              loading={loading}
+              error={catalogError}
+              search={query}
+              productImage={productImage}
+              onOpenProduct={openProduct}
+              isWishlisted={(product) =>
+                wishlist.some((item) => item._id === product._id)
+              }
+              onToggleWishlist={toggleWishlist}
+            />
+          }
         />
-      } />
-      <Route path="/products/:productId" element={
-        <ProductDetailPage
-          key={location.pathname}
-          busy={busy}
-          productImage={productImage}
-          isWishlisted={(product) => wishlist.some((item) => item._id === product._id)}
-          onToggleWishlist={toggleWishlist}
-          onAddToCart={requestAddToCart}
-          onOpenChat={requestChat}
+        <Route
+          path="/products/:productId"
+          element={
+            <ProductDetailPage
+              key={location.pathname}
+              busy={busy}
+              productImage={productImage}
+              isWishlisted={(product) =>
+                wishlist.some((item) => item._id === product._id)
+              }
+              onToggleWishlist={toggleWishlist}
+              onAddToCart={requestAddToCart}
+              onOpenChat={requestChat}
+            />
+          }
         />
-      } />
-      <Route path="/stores/slug/:slug" element={<StorefrontLayout><StorefrontPage productImage={productImage} onOpenProduct={openProduct} onOpenChat={requestChat} /></StorefrontLayout>} />
-      <Route path="/cart" element={protectedPage(
-        <CartPage
-          cart={cart}
-          cartCount={cartCount}
-          shippingFee={shippingFee}
-          cartTotal={cartTotal}
-          busy={busy}
-          productImage={productImage}
-          onChangeQuantity={changeQuantity}
-          onRemoveItem={deleteItem}
-          onClearCart={emptyCart}
-          onContinueShopping={() => setView("shop")}
-          onCheckout={openCheckout}
+        <Route
+          path="/stores/slug/:slug"
+          element={
+            <StorefrontLayout>
+              <StorefrontPage
+                productImage={productImage}
+                onOpenProduct={openProduct}
+                onOpenChat={requestChat}
+              />
+            </StorefrontLayout>
+          }
         />
-      )} />
-      <Route path="/checkout" element={protectedPage(
-        <CheckoutPage
-          cart={cart}
-          cartTotal={cartTotal}
-          shippingFee={shippingFee}
-          shipping={shipping}
-          addresses={addresses}
-          onChooseAddress={(address) => setShipping((value) => ({ ...value, ...address }))}
-          onShippingChange={setShipping}
-          busy={busy}
-          onBack={() => setView("cart")}
-          onSubmit={placeOrder}
+        <Route
+          path="/cart"
+          element={protectedPage(
+            <CartPage
+              cart={cart}
+              cartCount={cartCount}
+              shippingFee={shippingFee}
+              cartTotal={cartTotal}
+              busy={busy}
+              productImage={productImage}
+              onChangeQuantity={changeQuantity}
+              onRemoveItem={deleteItem}
+              onClearCart={emptyCart}
+              onContinueShopping={() => setView("shop")}
+              onCheckout={openCheckout}
+            />,
+          )}
         />
-      )} />
-      <Route path="/orders" element={protectedPage(
-        <OrdersPage
-          orders={orders}
-          loading={ordersLoading}
-          busy={busy}
-          onCancelOrder={cancelOrder}
-          onShop={() => setView("shop")}
-          onReviewed={(orderId, productId, reviewId) => setOrders((items) => items.map((order) => order._id === orderId ? { ...order, reviewedProductIds: [...(order.reviewedProductIds || []), String(productId)], reviewIdsByProduct: { ...(order.reviewIdsByProduct || {}), [String(productId)]: reviewId } } : order))}
-          onReviewDeleted={(orderId, productId) => setOrders((items) => items.map((order) => { if (order._id !== orderId) return order; const reviewIdsByProduct = { ...(order.reviewIdsByProduct || {}) }; delete reviewIdsByProduct[String(productId)]; return { ...order, reviewedProductIds: (order.reviewedProductIds || []).filter((id) => id !== String(productId)), reviewIdsByProduct }; }))}
+        <Route
+          path="/checkout"
+          element={protectedPage(
+            <CheckoutPage
+              cart={cart}
+              cartTotal={cartTotal}
+              shippingFee={shippingFee}
+              shipping={shipping}
+              addresses={addresses}
+              onChooseAddress={(address) =>
+                setShipping((value) => ({ ...value, ...address }))
+              }
+              onShippingChange={setShipping}
+              busy={busy}
+              onBack={() => setView("cart")}
+              onSubmit={placeOrder}
+            />,
+          )}
         />
-      )} />
-      <Route path="/profile" element={protectedPage(
-        <ProfilePage
-          user={user}
-          onUserChange={setUser}
-          onFeedback={(type, text) => setFeedback({ type, text })}
+        <Route
+          path="/orders"
+          element={protectedPage(
+            <OrdersPage
+              orders={orders}
+              loading={ordersLoading}
+              busy={busy}
+              onCancelOrder={cancelOrder}
+              onShop={() => setView("shop")}
+              onReviewed={(orderId, productId, reviewId) =>
+                setOrders((items) =>
+                  items.map((order) =>
+                    order._id === orderId
+                      ? {
+                          ...order,
+                          reviewedProductIds: [
+                            ...(order.reviewedProductIds || []),
+                            String(productId),
+                          ],
+                          reviewIdsByProduct: {
+                            ...(order.reviewIdsByProduct || {}),
+                            [String(productId)]: reviewId,
+                          },
+                        }
+                      : order,
+                  ),
+                )
+              }
+              onReviewDeleted={(orderId, productId) =>
+                setOrders((items) =>
+                  items.map((order) => {
+                    if (order._id !== orderId) return order;
+                    const reviewIdsByProduct = {
+                      ...(order.reviewIdsByProduct || {}),
+                    };
+                    delete reviewIdsByProduct[String(productId)];
+                    return {
+                      ...order,
+                      reviewedProductIds: (
+                        order.reviewedProductIds || []
+                      ).filter((id) => id !== String(productId)),
+                      reviewIdsByProduct,
+                    };
+                  }),
+                )
+              }
+            />,
+          )}
         />
-      )} />
-      <Route path="/wishlist" element={protectedPage(
-        <WishlistPage
-          products={wishlist}
-          loading={wishlistLoading}
-          productImage={productImage}
-          onOpenProduct={openProduct}
-          onRemove={(product) => toggleWishlist(product)}
-          onShop={() => setView("shop")}
+        <Route
+          path="/profile"
+          element={protectedPage(
+            <ProfilePage
+              user={user}
+              onUserChange={setUser}
+              onFeedback={(type, text) => setFeedback({ type, text })}
+            />,
+          )}
         />
-      )} />
-      <Route path="/admin" element={!authChecked ? null : user?.role === "ADMIN" ? (
-        <AdminLayout user={user}><AdminPage
-          onFeedback={(type, text) => setFeedback({ type, text })}
-          onCategoriesChanged={async () => setCategories(await getCategories())}
-          productImage={productImage}
-        /></AdminLayout>
-      ) : <Navigate to={user ? "/seller" : "/"} replace />} />
-      <Route path="/seller" element={!authChecked ? null : user && user.role !== "ADMIN" ? (
-        <SellerLayout user={user}><SellerPage
-          user={user}
-          onUserChange={setUser}
-          onFeedback={(type, text) => setFeedback({ type, text })}
-          productImage={productImage}
-        /></SellerLayout>
-      ) : <Navigate to={user?.role === "ADMIN" ? "/admin" : "/"} replace />} />
-      <Route path="/admin/messages" element={!authChecked ? null : user?.role === "ADMIN" ? <AdminLayout user={user}><main className="commerce-page admin-chat-page"><header className="page-heading"><p className="eyebrow">FIELDHOUSE · CSKH</p><h1>Hỗ trợ <em>khách hàng.</em></h1><p>Trả lời tin nhắn từ khách hàng theo thời gian thực.</p></header><ChatWorkspace user={user} mode="admin" embedded /></main></AdminLayout> : <Navigate to="/admin" replace />} />
-      <Route path="/seller/messages" element={!authChecked ? null : user?.role === "SELLER" ? <SellerLayout user={user}><main className="commerce-page seller-chat-page"><header className="page-heading"><p className="eyebrow">KÊNH NGƯỜI BÁN</p><h1>Hộp thư <em>cửa hàng.</em></h1><p>Trao đổi trực tiếp với khách hàng.</p></header><ChatWorkspace user={user} mode="seller" embedded /></main></SellerLayout> : <Navigate to="/seller" replace />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/wishlist"
+          element={protectedPage(
+            <WishlistPage
+              products={wishlist}
+              loading={wishlistLoading}
+              productImage={productImage}
+              onOpenProduct={openProduct}
+              onRemove={(product) => toggleWishlist(product)}
+              onShop={() => setView("shop")}
+            />,
+          )}
+        />
+        <Route
+          path="/admin"
+          element={
+            !authChecked ? null : user?.role === "ADMIN" ? (
+              <AdminLayout user={user}>
+                <AdminPage
+                  onFeedback={(type, text) => setFeedback({ type, text })}
+                  onCategoriesChanged={async () =>
+                    setCategories(await getCategories())
+                  }
+                  productImage={productImage}
+                />
+              </AdminLayout>
+            ) : (
+              <Navigate to={user ? "/seller" : "/"} replace />
+            )
+          }
+        />
+        <Route
+          path="/seller"
+          element={
+            !authChecked ? null : user && user.role !== "ADMIN" ? (
+              <SellerLayout user={user}>
+                <SellerPage
+                  user={user}
+                  onUserChange={setUser}
+                  onFeedback={(type, text) => setFeedback({ type, text })}
+                  productImage={productImage}
+                />
+              </SellerLayout>
+            ) : (
+              <Navigate to={user?.role === "ADMIN" ? "/admin" : "/"} replace />
+            )
+          }
+        />
+        <Route
+          path="/admin/messages"
+          element={
+            !authChecked ? null : user?.role === "ADMIN" ? (
+              <AdminLayout user={user}>
+                <main className="commerce-page admin-chat-page">
+                  <header className="page-heading">
+                    <p className="eyebrow">FIELDHOUSE · CSKH</p>
+                    <h1>
+                      Hỗ trợ <em>khách hàng.</em>
+                    </h1>
+                    <p>Trả lời tin nhắn từ khách hàng theo thời gian thực.</p>
+                  </header>
+                  <ChatWorkspace user={user} mode="admin" embedded />
+                </main>
+              </AdminLayout>
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
+        <Route
+          path="/seller/messages"
+          element={
+            !authChecked ? null : user?.role === "SELLER" ? (
+              <SellerLayout user={user}>
+                <main className="commerce-page seller-chat-page">
+                  <header className="page-heading">
+                    <p className="eyebrow">KÊNH NGƯỜI BÁN</p>
+                    <h1>
+                      Hộp thư <em>cửa hàng.</em>
+                    </h1>
+                    <p>Trao đổi trực tiếp với khách hàng.</p>
+                  </header>
+                  <ChatWorkspace user={user} mode="seller" embedded />
+                </main>
+              </SellerLayout>
+            ) : (
+              <Navigate to="/seller" replace />
+            )
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <footer className="site-footer">
