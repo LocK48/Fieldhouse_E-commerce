@@ -10,6 +10,8 @@ const adminRoutes = require("./routes/admin.routes");
 const categoryRoutes = require("./routes/category.routes");
 const productRoutes = require("./routes/product.routes");
 const uploadRoutes = require("./routes/upload.routes");
+const cartRoutes = require("./routes/cart.routes");
+const orderRoutes = require("./routes/order.routes");
 
 const app = express();
 
@@ -50,6 +52,10 @@ app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/products", productRoutes);
 
 app.use("/api/v1/uploads", uploadRoutes);
+
+app.use("/api/v1/cart", cartRoutes);
+
+app.use("/api/v1/orders", orderRoutes);
 
 app.use((req, res, next) => {
   const error = new Error(`Route not found: ${req.method} ${req.originalUrl}`);
