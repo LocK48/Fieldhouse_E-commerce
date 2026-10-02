@@ -1,4 +1,4 @@
-const { Store, User } = require("../models");
+const { Store, User, Product } = require("../models");
 
 const AppError = require("../utils/AppError");
 
@@ -58,6 +58,17 @@ const getMyStore = async (userId) => {
   return store;
 };
 
+const getPublicStore = async (slug) => {
+  const store = await Store.findOne({ slug, status: "ACTIVE" })
+    .populate("owner", "name avatar")
+    .lean();
+  if (!store) throw new AppError("Store not found", 404);
+  const products = await Product.find({ store: store._id, status: "ACTIVE" })
+    .populate("category", "name slug")
+    .lean({ virtuals: true });
+  return { store, products };
+};
+
 const updateMyStore = async (userId, data) => {
   const store = await Store.findOne({
     owner: userId,
@@ -83,5 +94,6 @@ const updateMyStore = async (userId, data) => {
 module.exports = {
   createStore,
   getMyStore,
+  getPublicStore,
   updateMyStore,
 };

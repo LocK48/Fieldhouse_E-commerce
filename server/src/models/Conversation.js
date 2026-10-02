@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const conversationSchema = new mongoose.Schema(
   {
+    type: {
+      type: String,
+      enum: ["STORE", "ADMIN"],
+      default: "STORE",
+      index: true,
+    },
+
     participants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -13,7 +20,7 @@ const conversationSchema = new mongoose.Schema(
     store: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",
-      required: true,
+      default: null,
       index: true,
     },
 
@@ -35,6 +42,7 @@ const conversationSchema = new mongoose.Schema(
 );
 
 conversationSchema.index({
+  type: 1,
   participants: 1,
   store: 1,
 });

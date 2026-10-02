@@ -10,6 +10,7 @@ export default function ProductDetailPage({
   isWishlisted,
   onToggleWishlist,
   onAddToCart,
+  onOpenChat,
 }) {
   const { productId } = useParams();
   const location = useLocation();
@@ -185,10 +186,9 @@ export default function ProductDetailPage({
               </strong>
               {store?.description && <p>{store.description}</p>}
             </div>
-            {store?.slug && (
-              <small className="seller-slug">/{store.slug}</small>
-            )}
+            {store?.slug && <Link className="seller-slug" to={`/stores/slug/${store.slug}`}>Xem cửa hàng ↗</Link>}
           </div>
+          {store?._id && <button className="seller-message-button" onClick={() => onOpenChat?.(store._id)}>Nhắn tin cho shop</button>}
           <div className="detail-promises">
             <span>✓ Thanh toán khi nhận hàng</span>
             <span>↗ Giao hàng toàn quốc</span>

@@ -15,6 +15,7 @@ const orderRoutes = require("./routes/order.routes");
 const wishlistRoutes = require("./routes/wishlist.routes");
 const addressRoutes = require("./routes/address.routes");
 const reviewRoutes = require("./routes/review.routes");
+const chatRoutes = require("./routes/chat.routes");
 
 const app = express();
 
@@ -64,6 +65,8 @@ app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
 
 app.use("/api/v1/reviews", reviewRoutes);
+
+app.use("/api/v1/chat", chatRoutes);
 
 app.use((req, res, next) => {
   const error = new Error(`Route not found: ${req.method} ${req.originalUrl}`);

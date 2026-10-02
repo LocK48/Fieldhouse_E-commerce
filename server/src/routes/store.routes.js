@@ -3,6 +3,7 @@ const express = require("express");
 const {
   createStore,
   getMyStore,
+  getPublicStore,
   updateMyStore,
 } = require("../controllers/store.controller");
 
@@ -13,6 +14,8 @@ const validate = require("../middlewares/validate.middleware");
 const schemas = require("../validations/schemas");
 
 const router = express.Router();
+
+router.get("/slug/:slug", asyncHandler(getPublicStore));
 
 router.use(authenticate);
 

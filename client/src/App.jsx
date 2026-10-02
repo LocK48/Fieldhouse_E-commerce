@@ -30,6 +30,12 @@ import ProfilePage from "./pages/Profile/ProfilePage";
 import WishlistPage from "./pages/Wishlist/WishlistPage";
 import ProductsPage from "./pages/Products/ProductsPage";
 import ProductDetailPage from "./pages/ProductDetail/ProductDetailPage";
+import StorefrontPage from "./pages/Storefront/StorefrontPage";
+import StorefrontLayout from "./components/layout/StorefrontLayout";
+import SellerLayout from "./components/layout/SellerLayout";
+import AdminLayout from "./components/layout/AdminLayout";
+import ChatWorkspace from "./components/chat/ChatWorkspace";
+import CustomerChatWidget from "./components/chat/CustomerChatWidget";
 import mercurialImage from "../../mercurial.webp";
 import "./App.css";
 import "./Commerce.css";
@@ -54,7 +60,9 @@ function App() {
     "/profile": "profile",
     "/wishlist": "wishlist",
     "/seller": "management",
+    "/seller/messages": "management",
     "/admin": "management",
+    "/admin/messages": "management",
   })[location.pathname] || "shop";
   const setView = (nextView) => {
     const paths = {
@@ -91,6 +99,8 @@ function App() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [pendingAdd, setPendingAdd] = useState(null);
   const [pendingWishlistProduct, setPendingWishlistProduct] = useState(null);
+  const [pendingChat, setPendingChat] = useState(null);
+  const [chatStartRequest, setChatStartRequest] = useState(null);
   const [returnView, setReturnView] = useState("shop");
   const [busy, setBusy] = useState(false);
   const [orders, setOrders] = useState([]);
@@ -104,6 +114,20 @@ function App() {
     city: "",
     country: "Vietnam",
   });
+
+  function requestChat(storeId = null) {
+    if (user && user.role !== "CUSTOMER") {
+      showToast("Tính năng chat dành cho tài khoản khách hàng.", "error");
+      return;
+    }
+    if (!user) {
+      setPendingChat({ storeId });
+      setReturnView(view === "product-detail" ? `${location.pathname}${location.search}` : "shop");
+      setAuthOpen(true);
+      return;
+    }
+    setChatStartRequest((current) => ({ id: (current?.id || 0) + 1, storeId }));
+  }
 
   const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
   const shippingFee =
@@ -364,6 +388,12 @@ function App() {
       }
     }
 
+    if (pendingChat) {
+      const target = pendingChat;
+      setPendingChat(null);
+      setChatStartRequest((current) => ({ id: (current?.id || 0) + 1, storeId: target.storeId }));
+    }
+
     setView(returnView);
     if (returnView === "orders") await loadOrders();
   }
@@ -555,6 +585,7 @@ function App() {
     setAuthOpen(false);
     setPendingAdd(null);
     setPendingWishlistProduct(null);
+    setPendingChat(null);
     setReturnView("shop");
   }
 
@@ -594,6 +625,7 @@ function App() {
         }}
         onOpenProfile={openProfile}
         onOpenWishlist={openWishlist}
+        onOpenChat={() => requestChat()}
       />
 
       <Routes>
@@ -652,8 +684,10 @@ function App() {
           isWishlisted={(product) => wishlist.some((item) => item._id === product._id)}
           onToggleWishlist={toggleWishlist}
           onAddToCart={requestAddToCart}
+          onOpenChat={requestChat}
         />
       } />
+      <Route path="/stores/slug/:slug" element={<StorefrontLayout><StorefrontPage productImage={productImage} onOpenProduct={openProduct} onOpenChat={requestChat} /></StorefrontLayout>} />
       <Route path="/cart" element={protectedPage(
         <CartPage
           cart={cart}
@@ -712,20 +746,22 @@ function App() {
         />
       )} />
       <Route path="/admin" element={!authChecked ? null : user?.role === "ADMIN" ? (
-        <AdminPage
+        <AdminLayout user={user}><AdminPage
           onFeedback={(type, text) => setFeedback({ type, text })}
           onCategoriesChanged={async () => setCategories(await getCategories())}
           productImage={productImage}
-        />
+        /></AdminLayout>
       ) : <Navigate to={user ? "/seller" : "/"} replace />} />
       <Route path="/seller" element={!authChecked ? null : user && user.role !== "ADMIN" ? (
-        <SellerPage
+        <SellerLayout user={user}><SellerPage
           user={user}
           onUserChange={setUser}
           onFeedback={(type, text) => setFeedback({ type, text })}
           productImage={productImage}
-        />
+        /></SellerLayout>
       ) : <Navigate to={user?.role === "ADMIN" ? "/admin" : "/"} replace />} />
+      <Route path="/admin/messages" element={!authChecked ? null : user?.role === "ADMIN" ? <AdminLayout user={user}><main className="commerce-page admin-chat-page"><header className="page-heading"><p className="eyebrow">FIELDHOUSE · CSKH</p><h1>Hỗ trợ <em>khách hàng.</em></h1><p>Trả lời tin nhắn từ khách hàng theo thời gian thực.</p></header><ChatWorkspace user={user} mode="admin" embedded /></main></AdminLayout> : <Navigate to="/admin" replace />} />
+      <Route path="/seller/messages" element={!authChecked ? null : user?.role === "SELLER" ? <SellerLayout user={user}><main className="commerce-page seller-chat-page"><header className="page-heading"><p className="eyebrow">KÊNH NGƯỜI BÁN</p><h1>Hộp thư <em>cửa hàng.</em></h1><p>Trao đổi trực tiếp với khách hàng.</p></header><ChatWorkspace user={user} mode="seller" embedded /></main></SellerLayout> : <Navigate to="/seller" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
@@ -740,6 +776,7 @@ function App() {
         <span>© 2026 FIELDHOUSE</span>
       </footer>
 
+      <CustomerChatWidget user={user} startRequest={chatStartRequest} />
       {authOpen && <AuthDialog onClose={closeAuth} onSubmit={handleAuth} />}
     </div>
   );

@@ -19,6 +19,11 @@ const getMyStore = async (req, res) => {
   });
 };
 
+const getPublicStore = async (req, res) => {
+  const data = await storeService.getPublicStore(req.params.slug);
+  res.status(200).json({ success: true, data });
+};
+
 const updateMyStore = async (req, res) => {
   const store = await storeService.updateMyStore(req.user._id, req.body);
 
@@ -32,5 +37,6 @@ const updateMyStore = async (req, res) => {
 module.exports = {
   createStore,
   getMyStore,
+  getPublicStore,
   updateMyStore,
 };

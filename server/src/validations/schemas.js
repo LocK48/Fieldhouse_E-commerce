@@ -232,4 +232,12 @@ module.exports = {
       .max(5 * 1024 * 1024),
   }),
   uploadDelete: z.object({ key: nonEmpty(1024) }),
+  chatConversationCreate: z.object({
+    type: z.enum(["STORE", "ADMIN"]),
+    storeId: objectId.optional(),
+  }).refine((value) => value.type !== "STORE" || Boolean(value.storeId), {
+    path: ["storeId"],
+    message: "A store is required to contact a seller",
+  }),
+  chatMessage: z.object({ content: nonEmpty(2000) }),
 };

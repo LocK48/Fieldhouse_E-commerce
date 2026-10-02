@@ -14,6 +14,7 @@ export default function SiteHeader({
   onOpenManagement,
   onOpenProfile,
   onOpenWishlist,
+  onOpenChat,
 }) {
   const managementLabel =
     user?.role === "ADMIN"
@@ -31,7 +32,11 @@ export default function SiteHeader({
       </a>
       <nav className="main-nav" aria-label="Điều hướng">
         <a
-          className={["shop", "products", "product-detail"].includes(view) ? "active" : ""}
+          className={
+            ["shop", "products", "product-detail"].includes(view)
+              ? "active"
+              : ""
+          }
           href="#products"
           onClick={onGoShop}
         >
@@ -46,6 +51,11 @@ export default function SiteHeader({
             onClick={onOpenOrders}
           >
             Đơn hàng
+          </button>
+        )}
+        {user?.role === "CUSTOMER" && (
+          <button className="nav-link" onClick={onOpenChat}>
+            Nhắn tin
           </button>
         )}
       </nav>
