@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
+import { addCartItem, getCart, removeCartItem, updateCartItem } from './api/cart.api'
 import { getCategories } from './api/category.api'
+import { getCurrentUser, login, logout, registerAccount } from './api/auth.api'
+import { createCodOrder, getMyOrders } from './api/order.api'
 import { getProducts } from './api/product.api'
+import AuthDialog from './components/auth/AuthDialog'
+import SiteHeader from './components/layout/SiteHeader'
+import ProductDialog from './components/product/ProductDialog'
+import CartPage from './pages/Cart/CartPage'
+import CheckoutPage from './pages/Checkout/CheckoutPage'
+import HomePage from './pages/Home/HomePage'
+import OrdersPage from './pages/Orders/OrdersPage'
 import mercurialImage from '../../mercurial.webp'
 import './App.css'
+import './Commerce.css'
 
-const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 })
+const freeShippingThreshold = 1_500_000
+const standardShipping = 30_000
 
 function App() {
   const [products, setProducts] = useState([])
@@ -15,62 +27,295 @@ function App() {
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [cartCount, setCartCount] = useState(() => Number(localStorage.getItem('fieldhouse-cart-count') || 0))
-  const [selected, setSelected] = useState(null)
-  const categoryNames = useMemo(() => ['Tất cả', ...categories.map((item) => item.name)], [categories])
+  const [catalogError, setCatalogError] = useState('')
+  const [user, setUser] = useState(null)
+  const [cart, setCart] = useState({ items: [], subtotal: 0 })
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedVariantId, setSelectedVariantId] = useState('')
+  const [view, setView] = useState('shop')
+  const [authOpen, setAuthOpen] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [pendingAdd, setPendingAdd] = useState(null)
+  const [returnView, setReturnView] = useState('shop')
+  const [feedback, setFeedback] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [orders, setOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [shipping, setShipping] = useState({ recipientName: '', phone: '', addressLine: '', ward: '', district: '', city: '', country: 'Vietnam' })
 
-  useEffect(() => { getCategories().then(setCategories).catch(() => setCategories([])) }, [])
+  const cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0)
+  const shippingFee = cart.subtotal >= freeShippingThreshold ? 0 : standardShipping
+  const cartTotal = cart.subtotal + shippingFee
+  const categoryId = useMemo(() => categories.find((item) => item.name === category)?._id, [categories, category])
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]))
+  }, [])
+
   useEffect(() => {
     let active = true
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setLoading(true)
-      setError('')
-      getProducts({ search: query.trim(), category: categories.find((item) => item.name === category)?._id, sort, page, limit: 12 })
-        .then((result) => { if (active) { setProducts(result.products || []); setPagination(result.pagination) } })
-        .catch((reason) => { if (active) setError(reason.message || 'Không thể tải sản phẩm. Hãy kiểm tra kết nối API.') })
+      setCatalogError('')
+      getProducts({ search: query.trim(), category: categoryId, sort, page, limit: 12 })
+        .then((result) => {
+          if (active) {
+            setProducts(result.products || [])
+            setPagination(result.pagination)
+          }
+        })
+        .catch((reason) => {
+          if (active) setCatalogError(reason.message || 'Không thể tải sản phẩm. Hãy kiểm tra kết nối API.')
+        })
         .finally(() => { if (active) setLoading(false) })
     }, query ? 250 : 0)
-    return () => { active = false; clearTimeout(timer) }
-  }, [query, category, categories, sort, page])
+    return () => { active = false; window.clearTimeout(timer) }
+  }, [query, categoryId, sort, page])
 
-  function addToCart() {
-    const next = cartCount + 1
-    setCartCount(next)
-    localStorage.setItem('fieldhouse-cart-count', String(next))
-    setSelected(null)
-  }
+  useEffect(() => {
+    let active = true
+    if (!localStorage.getItem('fieldhouse-access-token') && !localStorage.getItem('fieldhouse-refresh-token')) return undefined
+
+    getCurrentUser()
+      .then(async (currentUser) => {
+        if (!active) return
+        setUser(currentUser)
+        setShipping((value) => ({ ...value, recipientName: currentUser.name || value.recipientName }))
+        const currentCart = await getCart()
+        if (active) setCart(currentCart)
+      })
+      .catch(() => {
+        localStorage.removeItem('fieldhouse-access-token')
+        localStorage.removeItem('fieldhouse-refresh-token')
+      })
+
+    return () => { active = false }
+  }, [])
 
   function productImage(product) {
-    return product.images?.[0]?.url || (product.slug?.includes('mercurial') ? mercurialImage : '')
+    return product?.images?.[0]?.url || (product?.slug?.includes('mercurial') ? mercurialImage : '')
+  }
+
+  async function refreshCart() {
+    const nextCart = await getCart()
+    setCart(nextCart)
+    return nextCart
+  }
+
+  async function putItemInCart(product, variantId) {
+    try {
+      setBusy(true)
+      setCart(await addCartItem({ productId: product._id, variantId, quantity: 1 }))
+      setSelectedProduct(null)
+      setFeedback({ type: 'success', text: 'Đã thêm sản phẩm vào giỏ hàng.' })
+    } catch (reason) {
+      setFeedback({ type: 'error', text: reason.message || 'Không thể thêm sản phẩm vào giỏ.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function requestAddToCart(product, variantId) {
+    if (!user) {
+      setPendingAdd({ product, variantId })
+      setReturnView('shop')
+      setSelectedProduct(null)
+      setAuthOpen(true)
+      return
+    }
+    putItemInCart(product, variantId)
+  }
+
+  async function handleAuth(mode, form) {
+    if (mode === 'register') await registerAccount({ name: form.name, email: form.email, password: form.password })
+    const signedIn = await login(form.email, form.password)
+    setUser(signedIn)
+    setShipping((value) => ({ ...value, recipientName: signedIn.name || value.recipientName }))
+    setAuthOpen(false)
+    setFeedback({ type: 'success', text: mode === 'register' ? 'Tạo tài khoản thành công. Bạn đã đăng nhập.' : `Chào mừng trở lại, ${signedIn.name}.` })
+    try { setCart(await getCart()) } catch { setCart({ items: [], subtotal: 0 }) }
+
+    if (pendingAdd) {
+      const queuedItem = pendingAdd
+      setPendingAdd(null)
+      await putItemInCart(queuedItem.product, queuedItem.variantId)
+      return
+    }
+
+    setView(returnView)
+    if (returnView === 'orders') await loadOrders()
+  }
+
+  async function handleLogout() {
+    try { await logout() } catch { /* Clear local state even if the API is unavailable. */ }
+    setUser(null)
+    setCart({ items: [], subtotal: 0 })
+    setOrders([])
+    setAccountMenuOpen(false)
+    setView('shop')
+    setFeedback({ type: 'success', text: 'Bạn đã đăng xuất.' })
+  }
+
+  async function openCart() {
+    if (!user) {
+      setReturnView('cart')
+      setAuthOpen(true)
+      return
+    }
+    try {
+      await refreshCart()
+      setView('cart')
+    } catch (reason) {
+      setFeedback({ type: 'error', text: reason.message || 'Không thể tải giỏ hàng.' })
+    }
+  }
+
+  async function loadOrders() {
+    setOrdersLoading(true)
+    try {
+      const result = await getMyOrders({ page: 1, limit: 20 })
+      setOrders(result.orders || [])
+    } catch (reason) {
+      setFeedback({ type: 'error', text: reason.message || 'Không thể tải lịch sử đơn hàng.' })
+    } finally {
+      setOrdersLoading(false)
+    }
+  }
+
+  async function openOrders() {
+    if (!user) {
+      setReturnView('orders')
+      setAuthOpen(true)
+      setAccountMenuOpen(false)
+      return
+    }
+    setView('orders')
+    setAccountMenuOpen(false)
+    await loadOrders()
+  }
+
+  async function changeQuantity(item, quantity) {
+    try {
+      setBusy(true)
+      setCart(await updateCartItem({ productId: item.product._id, variantId: item.variant._id, quantity }))
+    } catch (reason) {
+      setFeedback({ type: 'error', text: reason.message || 'Không thể cập nhật số lượng.' })
+      try { await refreshCart() } catch { /* Keep the current cart visible. */ }
+    } finally { setBusy(false) }
+  }
+
+  async function deleteItem(item) {
+    try {
+      setBusy(true)
+      setCart(await removeCartItem({ productId: item.product._id, variantId: item.variant?._id }))
+    } catch (reason) {
+      setFeedback({ type: 'error', text: reason.message || 'Không thể xóa sản phẩm.' })
+    } finally { setBusy(false) }
+  }
+
+  async function placeOrder(event) {
+    event.preventDefault()
+    try {
+      setBusy(true)
+      const order = await createCodOrder(shipping)
+      setCart({ items: [], subtotal: 0 })
+      setView('orders')
+      setOrders([order])
+      setFeedback({ type: 'success', text: `Đặt hàng thành công · Mã đơn ${order._id.slice(-8).toUpperCase()}` })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      try {
+        const result = await getMyOrders({ page: 1, limit: 20 })
+        setOrders(result.orders?.length ? result.orders : [order])
+      } catch { /* Keep the created order visible if history cannot refresh. */ }
+    } catch (reason) {
+      setFeedback({ type: 'error', text: reason.message || 'Chưa thể tạo đơn hàng. Hãy kiểm tra lại tồn kho và địa chỉ.' })
+      if (reason.response?.status === 409) {
+        try { await refreshCart() } catch { /* Preserve checkout if the cart refresh also fails. */ }
+      }
+    } finally { setBusy(false) }
+  }
+
+  function openProduct(product) {
+    setSelectedProduct(product)
+    setSelectedVariantId(product.variants?.find((item) => item.isActive)?._id || '')
+  }
+
+  function closeAuth() {
+    setAuthOpen(false)
+    setPendingAdd(null)
+    setReturnView('shop')
   }
 
   return <div className="app-shell">
-    <div className="announcement">Giao hàng miễn phí cho đơn hàng từ 1.500.000₫ <span>·</span> Đổi trả trong 30 ngày</div>
-    <header className="site-header">
-      <a className="brand" href="#home"><span className="brand-mark">F</span><span>fieldhouse<span className="brand-dot">.</span></span></a>
-      <nav className="main-nav"><a className="active" href="#products">Cửa hàng</a><a href="#collections">Bộ sưu tập</a><a href="#story">Câu chuyện</a></nav>
-      <div className="header-actions"><label className="search-box"><span>⌕</span><input aria-label="Tìm sản phẩm" placeholder="Tìm sản phẩm..." value={query} onChange={(event) => { setQuery(event.target.value); setPage(1) }} /></label><a className="cart-button" href="#products">Giỏ hàng <span>{cartCount}</span></a></div>
-    </header>
+    <div className="announcement">Giao hàng miễn phí cho đơn từ 1.500.000₫ <span>·</span> Thanh toán khi nhận hàng</div>
+    <SiteHeader
+      view={view}
+      user={user}
+      cartCount={cartCount}
+      query={query}
+      accountMenuOpen={accountMenuOpen}
+      onQueryChange={(value) => { setQuery(value); setPage(1); setView('shop') }}
+      onGoShop={() => { setView('shop'); setAccountMenuOpen(false) }}
+      onOpenOrders={openOrders}
+      onToggleAccount={() => setAccountMenuOpen((open) => !open)}
+      onOpenAuth={() => setAuthOpen(true)}
+      onLogout={handleLogout}
+      onOpenCart={openCart}
+    />
 
-    <main id="home">
-      <section className="hero" id="collections"><div className="hero-copy"><p className="eyebrow">— TRANG BỊ CHO CHUYỂN ĐỘNG</p><h1>Chơi hết mình.<br /><em>Sống hết chất.</em></h1><p className="hero-description">Thiết bị thể thao tuyển chọn cho những người luôn tiến về phía trước. Tìm món đồ tiếp theo giúp bạn bứt phá.</p><a className="primary-button" href="#products">Khám phá bộ sưu tập <span>↗</span></a><div className="hero-proof"><div className="avatar-stack"><span>✦</span><span>✦</span><span>✦</span></div><p><strong>2.400+</strong> vận động viên tin chọn</p></div></div>
-        <div className="hero-art" aria-label="Bộ sưu tập thể thao Fieldhouse"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-sun"/><div className="art-ball">F</div><div className="art-caption"><span>FIELD NOTES / 01</span><strong>Move with purpose.</strong></div><div className="art-index">01 <span>/</span> 04</div></div><div className="hero-side-label">PERFORMANCE GOODS · EST. 2024</div>
-      </section>
+    {feedback && <div className={`feedback feedback-${feedback.type}`} role="status"><span>{feedback.text}</span><button onClick={() => setFeedback(null)} aria-label="Đóng thông báo">×</button></div>}
 
-      <section className="benefits"><div><i>↗</i><p><strong>Giao hàng toàn quốc</strong><small>Miễn phí đơn từ 1.500.000₫</small></p></div><div><i>⟲</i><p><strong>Đổi trả dễ dàng</strong><small>Trong vòng 30 ngày</small></p></div><div><i>✓</i><p><strong>Hàng chính hãng</strong><small>Cam kết nguồn gốc rõ ràng</small></p></div><div><i>♡</i><p><strong>Hỗ trợ tận tâm</strong><small>Đồng hành cùng bạn mỗi ngày</small></p></div></section>
+    {view === 'shop' && <HomePage
+      products={products}
+      categories={categories}
+      category={category}
+      onCategoryChange={(value) => { setCategory(value); setPage(1) }}
+      sort={sort}
+      onSortChange={(value) => { setSort(value); setPage(1) }}
+      page={page}
+      onPageChange={setPage}
+      pagination={pagination}
+      loading={loading}
+      error={catalogError}
+      productImage={productImage}
+      onOpenProduct={openProduct}
+    />}
+    {view === 'cart' && <CartPage
+      cart={cart}
+      cartCount={cartCount}
+      shippingFee={shippingFee}
+      cartTotal={cartTotal}
+      busy={busy}
+      productImage={productImage}
+      onChangeQuantity={changeQuantity}
+      onRemoveItem={deleteItem}
+      onContinueShopping={() => setView('shop')}
+      onCheckout={() => setView('checkout')}
+    />}
+    {view === 'checkout' && <CheckoutPage
+      cart={cart}
+      cartTotal={cartTotal}
+      shippingFee={shippingFee}
+      shipping={shipping}
+      onShippingChange={setShipping}
+      busy={busy}
+      onBack={() => setView('cart')}
+      onSubmit={placeOrder}
+    />}
+    {view === 'orders' && <OrdersPage orders={orders} loading={ordersLoading} onShop={() => setView('shop')}/>}
 
-      <section className="shop-section" id="products"><div className="section-heading"><div><p className="eyebrow">LỰA CHỌN CỦA BẠN</p><h2>Sẵn sàng cho <em>cuộc chơi.</em></h2></div><a href="#products" className="text-link">Xem tất cả ↗</a></div>
-        <div className="shop-controls"><div className="category-tabs" role="tablist">{(categoryNames.length === 1 ? ['Tất cả', 'Chạy bộ', 'Bóng đá', 'Tập luyện', 'Phụ kiện'] : categoryNames).map((name) => <button key={name} role="tab" aria-selected={category === name} className={category === name ? 'selected' : ''} onClick={() => { setCategory(name); setPage(1) }}>{name}</button>)}</div><label className="sort-label">Sắp xếp <select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1) }}><option value="newest">Mới nhất</option><option value="price_asc">Giá tăng dần</option><option value="price_desc">Giá giảm dần</option><option value="rating">Đánh giá cao</option></select></label></div>
-        {error && <div className="notice"><strong>Chưa kết nối được cửa hàng.</strong> {error}<small> Chạy API và nạp dữ liệu mẫu để xem sản phẩm.</small></div>}
-        {loading ? <div className="product-grid">{Array.from({ length: 4 }, (_, i) => <div className="skeleton" key={i}/>)}</div> : products.length ? <div className="product-grid">{products.map((product, index) => <article className="product-card" key={product._id}><button className="product-image" onClick={() => setSelected(product)} aria-label={`Xem ${product.name}`}><div className={`product-art art-${index % 4}`}>{productImage(product) ? <img src={productImage(product)} alt={product.images?.[0]?.alt || product.name}/> : <span>{product.category?.name?.slice(0, 1) || 'F'}</span>}<b className="product-tag">{product.category?.name || 'FIELDHOUSE'}</b><b className="quick-view">Xem nhanh ↗</b></div></button><div className="product-meta"><div><p>{product.brand || product.store?.name || 'FIELDHOUSE'}</p><h3>{product.name}</h3></div><button className="save-button" aria-label="Lưu sản phẩm">♡</button></div><div className="product-price"><strong>{money.format(product.priceRange?.min ?? product.variants?.[0]?.price ?? 0)}</strong>{product.averageRating > 0 && <span>★ {product.averageRating.toFixed(1)}</span>}</div></article>)}</div> : <div className="empty-state"><span>⌕</span><h3>{error ? 'Cửa hàng đang tạm nghỉ' : 'Chưa có sản phẩm phù hợp'}</h3><p>{error ? 'Hãy khởi động API rồi tải lại trang.' : 'Thử chọn danh mục khác hoặc tìm từ khóa khác nhé.'}</p></div>}
-        {pagination?.totalPages > 1 && <div className="pagination"><button disabled={!pagination.hasPreviousPage} onClick={() => setPage(page - 1)}>← Trước</button><span>Trang {pagination.page} / {pagination.totalPages}</span><button disabled={!pagination.hasNextPage} onClick={() => setPage(page + 1)}>Tiếp →</button></div>}
-      </section>
+    <footer className="site-footer"><a className="brand" href="#home" onClick={() => setView('shop')}><span className="brand-mark">F</span><span>fieldhouse<span className="brand-dot">.</span></span></a><p>Built for the love of the game.</p><span>© 2026 FIELDHOUSE</span></footer>
 
-      <section className="story-banner" id="story"><div className="story-mark">F.</div><div><p className="eyebrow">KHÔNG CHỈ LÀ MỘT MÓN ĐỒ</p><h2>Chuyển động tạo nên<br/><em>phiên bản tốt hơn.</em></h2></div><p className="story-description">Fieldhouse tuyển chọn những sản phẩm giúp bạn tập trung vào điều quan trọng nhất: tận hưởng từng bước tiến của mình.</p><a className="round-link" href="#products">↗</a></section>
-    </main>
-    <footer className="site-footer"><a className="brand" href="#home"><span className="brand-mark">F</span><span>fieldhouse<span className="brand-dot">.</span></span></a><p>Built for the love of the game.</p><span>© 2026 FIELDHOUSE</span></footer>
-    {selected && <div className="modal-backdrop" onClick={() => setSelected(null)}><section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSelected(null)} aria-label="Đóng">×</button><div className="modal-image">{productImage(selected) ? <img src={productImage(selected)} alt={selected.name}/> : selected.category?.name?.slice(0, 1) || 'F'}</div><div className="modal-content"><p className="product-brand">{selected.brand || selected.store?.name || 'FIELDHOUSE'}</p><h2 id="modal-title">{selected.name}</h2><p>{selected.description}</p><strong>{money.format(selected.priceRange?.min ?? selected.variants?.[0]?.price ?? 0)}</strong><button className="primary-button" onClick={addToCart}>Thêm vào giỏ <span>↗</span></button><small>Giá và tồn kho được cập nhật từ cửa hàng.</small></div></section></div>}
+    {selectedProduct && <ProductDialog
+      product={selectedProduct}
+      variantId={selectedVariantId}
+      busy={busy}
+      productImage={productImage}
+      onVariantChange={setSelectedVariantId}
+      onAddToCart={requestAddToCart}
+      onClose={() => setSelectedProduct(null)}
+    />}
+    {authOpen && <AuthDialog onClose={closeAuth} onSubmit={handleAuth}/>}
   </div>
 }
 

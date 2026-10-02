@@ -24,7 +24,7 @@ export async function refreshSession() {
   const response = await api.post('/auth/refresh', { refreshToken })
   const session = response.data.data
   localStorage.setItem('fieldhouse-access-token', session.accessToken)
-  localStorage.setItem('fieldhouse-refresh-token', session.refreshToken)
+  if (session.refreshToken) localStorage.setItem('fieldhouse-refresh-token', session.refreshToken)
   return session
 }
 

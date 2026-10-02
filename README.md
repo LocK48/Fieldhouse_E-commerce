@@ -77,4 +77,4 @@ Place an order with `{ "shippingAddress": { "recipientName": "...", "phone": "..
 
 ## Current scope
 
-The storefront includes product discovery, filtering, sorting, pagination, a product detail dialog, and a browser-local demo cart count. The API also supports persistent customer carts, COD order placement, and customer order history. COD orders reserve stock and create a pending payment record; online payment gateways and order fulfillment/status management are not implemented yet.
+The storefront includes product discovery, filtering, sorting, pagination, account registration and sign-in, a persistent cart, COD checkout, and customer order history. COD orders reserve stock and create a pending payment record; online payment gateways and order fulfillment/status management are not implemented yet.
