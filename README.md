@@ -42,6 +42,22 @@ Requirements: Node.js 20.19+ (or 22.12+), MongoDB, and npm.
 
    Open the local URL printed by Vite. Set `VITE_API_URL` in `client/.env.local` only when the API is not at `http://localhost:5000/api/v1`.
 
+## Run with Docker Compose
+
+Docker Compose runs MongoDB, the API, and the static frontend together. The frontend proxy keeps API and Socket.IO traffic on the same origin; only the web port is published, and MongoDB data is stored in the `mongo_data` volume.
+
+1. Copy `docker.env.example` to `.env`. Set long, independent values for `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `OTP_HASH_SECRET`, and `MONGO_ROOT_PASSWORD`. Keep the Mongo password alphanumeric because Compose inserts it into the MongoDB URI.
+2. Set `CLIENT_URL` to the exact public site origin (for example, `https://shop.example.com`). Configure the SMTP variables to enable registration OTP email delivery. R2 settings are optional until image uploads are needed.
+3. Start the stack from the project root:
+
+   ```powershell
+   docker compose up --build -d
+   ```
+
+   The site is available at `http://localhost:8080` by default. Set `APP_PORT` to change the host port. To load the demo catalog for local review, run `docker compose exec api npm run seed`; demo accounts use the credentials listed above and must not be used on a public deployment.
+
+The Compose file serves HTTP. Put it behind a TLS enabled reverse proxy before using a public domain. `docker compose down` keeps the database volume; `docker compose down -v` deletes it.
+
 ## Demo accounts
 
 The seed creates one admin and two sellers. Their shared password is `Password123!`.
