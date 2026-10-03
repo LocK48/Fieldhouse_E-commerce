@@ -1,7 +1,10 @@
 const service = require("../services/chat.service");
 
 const listConversations = async (req, res) =>
-  res.json({ success: true, data: { conversations: await service.getConversations(req.user) } });
+  res.json({
+    success: true,
+    data: { conversations: await service.getConversations(req.user) },
+  });
 
 const createConversation = async (req, res) => {
   const conversation = await service.createConversation(req.user, req.body);
@@ -13,6 +16,11 @@ const createConversation = async (req, res) => {
 };
 
 const getMessages = async (req, res) =>
-  res.json({ success: true, data: { messages: await service.getMessages(req.user, req.params.conversationId) } });
+  res.json({
+    success: true,
+    data: {
+      messages: await service.getMessages(req.user, req.params.conversationId),
+    },
+  });
 
 module.exports = { listConversations, createConversation, getMessages };

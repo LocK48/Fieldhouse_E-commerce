@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { ROUTES } from "../../routes/paths";
 import "./RoleLayouts.css";
 
 export default function SellerLayout({ children, user }) {
@@ -14,13 +15,13 @@ export default function SellerLayout({ children, user }) {
         </div>
         <p className="role-caption">KÊNH NGƯỜI BÁN</p>
         <nav>
-          <NavLink end to="/seller">
+          <NavLink end to={ROUTES.SELLER}>
             Tổng quan <span>↗</span>
           </NavLink>
-          <NavLink to="/seller/messages">
+          <NavLink to={ROUTES.SELLER_MESSAGES}>
             Tin nhắn <span>✳</span>
           </NavLink>
-          <NavLink to="/profile">
+          <NavLink to={ROUTES.PROFILE}>
             Hồ sơ cá nhân <span>○</span>
           </NavLink>
         </nav>

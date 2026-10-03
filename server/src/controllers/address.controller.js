@@ -6,12 +6,10 @@ const getAddresses = async (req, res) =>
     data: { addresses: await service.getAddresses(req.user._id) },
   });
 const createAddress = async (req, res) =>
-  res
-    .status(201)
-    .json({
-      success: true,
-      data: { address: await service.saveAddress(req.user._id, req.body) },
-    });
+  res.status(201).json({
+    success: true,
+    data: { address: await service.saveAddress(req.user._id, req.body) },
+  });
 const updateAddress = async (req, res) =>
   res.json({
     success: true,

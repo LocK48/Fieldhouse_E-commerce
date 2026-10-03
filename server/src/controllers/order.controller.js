@@ -24,7 +24,9 @@ const getMyOrder = async (req, res) => {
 
 const cancelMyOrder = async (req, res) => {
   const order = await orderService.cancelMyOrder(req.user._id, req.params.id);
-  res.status(200).json({ success: true, message: "Order cancelled", data: { order } });
+  res
+    .status(200)
+    .json({ success: true, message: "Order cancelled", data: { order } });
 };
 
 module.exports = { createCodOrder, getMyOrders, getMyOrder, cancelMyOrder };

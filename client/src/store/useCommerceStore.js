@@ -16,6 +16,11 @@ export const useCommerceStore = create((set) => {
     setWishlist: (value) => updateValue("wishlist", value),
     setAddresses: (value) => updateValue("addresses", value),
     clearCommerceState: () =>
-      set({ user: null, cart: { items: [], subtotal: 0 }, wishlist: [], addresses: [] }),
+      set({
+        user: null,
+        cart: { items: [], subtotal: 0 },
+        wishlist: [],
+        addresses: [],
+      }),
   };
 });

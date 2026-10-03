@@ -6,13 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import {
-  addCartItem,
-  clearCart,
-  getCart,
-  removeCartItem,
-  updateCartItem,
-} from "./api/cart.api";
+import { getCart } from "./api/cart.api";
 import { getCategories } from "./api/category.api";
 import { getCurrentUser, login, logout, registerAccount } from "./api/auth.api";
 import { cancelMyOrder, createCodOrder, getMyOrders } from "./api/order.api";
@@ -25,7 +19,7 @@ import {
 } from "./api/wishlist.api";
 import AuthDialog from "./components/auth/AuthDialog";
 import SiteHeader from "./components/layout/SiteHeader";
-import { useFeedback } from "./components/ui/FeedbackContext";
+import { useFeedback } from "./components/common/FeedbackContext";
 import CartPage from "./pages/Cart/CartPage";
 import CheckoutPage from "./pages/Checkout/CheckoutPage";
 import HomePage from "./pages/Home/HomePage";
@@ -43,6 +37,8 @@ import AdminLayout from "./components/layout/AdminLayout";
 import ChatWorkspace from "./components/chat/ChatWorkspace";
 import CustomerChatWidget from "./components/chat/CustomerChatWidget";
 import { useCommerceStore } from "./store/useCommerceStore";
+import { useCartActions } from "./hooks/useCartActions";
+import { ROUTES, productDetailPath } from "./routes/paths";
 import mercurialImage from "../../mercurial.webp";
 import "./App.css";
 import "./Commerce.css";
@@ -61,34 +57,34 @@ function App() {
   const view = location.pathname.startsWith("/products/")
     ? "product-detail"
     : {
-        "/": "shop",
-        "/products": "products",
-        "/cart": "cart",
-        "/checkout": "checkout",
-        "/orders": "orders",
-        "/profile": "profile",
-        "/wishlist": "wishlist",
-        "/seller": "management",
-        "/seller/messages": "management",
-        "/admin": "management",
-        "/admin/messages": "management",
+        [ROUTES.HOME]: "shop",
+        [ROUTES.PRODUCTS]: "products",
+        [ROUTES.CART]: "cart",
+        [ROUTES.CHECKOUT]: "checkout",
+        [ROUTES.ORDERS]: "orders",
+        [ROUTES.PROFILE]: "profile",
+        [ROUTES.WISHLIST]: "wishlist",
+        [ROUTES.SELLER]: "management",
+        [ROUTES.SELLER_MESSAGES]: "management",
+        [ROUTES.ADMIN]: "management",
+        [ROUTES.ADMIN_MESSAGES]: "management",
       }[location.pathname] || "shop";
   const setView = (nextView) => {
     const paths = {
-      shop: "/",
-      products: "/products",
-      cart: "/cart",
-      checkout: "/checkout",
-      orders: "/orders",
-      profile: "/profile",
-      wishlist: "/wishlist",
-      management: "/seller",
+      shop: ROUTES.HOME,
+      products: ROUTES.PRODUCTS,
+      cart: ROUTES.CART,
+      checkout: ROUTES.CHECKOUT,
+      orders: ROUTES.ORDERS,
+      profile: ROUTES.PROFILE,
+      wishlist: ROUTES.WISHLIST,
+      management: ROUTES.SELLER,
     };
     navigate(
       nextView.startsWith("/")
         ? nextView
         : nextView === "management" && user?.role === "ADMIN"
-          ? "/admin"
+          ? ROUTES.ADMIN
           : paths[nextView] || "/",
     );
   };
@@ -115,7 +111,9 @@ function App() {
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const addresses = useCommerceStore((state) => state.addresses);
   const setAddresses = useCommerceStore((state) => state.setAddresses);
-  const clearCommerceState = useCommerceStore((state) => state.clearCommerceState);
+  const clearCommerceState = useCommerceStore(
+    (state) => state.clearCommerceState,
+  );
   const [authOpen, setAuthOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [pendingAdd, setPendingAdd] = useState(null);
@@ -135,6 +133,8 @@ function App() {
     city: "",
     country: "Vietnam",
   });
+  const { refreshCart, putItemInCart, changeQuantity, deleteItem, emptyCart } =
+    useCartActions({ setCart, setBusy, setFeedback, confirm });
 
   function requestChat(storeId = null) {
     if (user && user.role !== "CUSTOMER") {
@@ -255,29 +255,6 @@ function App() {
       product?.images?.[0]?.url ||
       (product?.slug?.includes("mercurial") ? mercurialImage : "")
     );
-  }
-
-  async function refreshCart() {
-    const nextCart = await getCart();
-    setCart(nextCart);
-    return nextCart;
-  }
-
-  async function putItemInCart(product, variantId) {
-    try {
-      setBusy(true);
-      setCart(
-        await addCartItem({ productId: product._id, variantId, quantity: 1 }),
-      );
-      setFeedback({ type: "success", text: "Đã thêm sản phẩm vào giỏ hàng." });
-    } catch (reason) {
-      setFeedback({
-        type: "error",
-        text: reason.message || "Không thể thêm sản phẩm vào giỏ.",
-      });
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function toggleWishlist(product) {
@@ -521,77 +498,6 @@ function App() {
     await loadOrders();
   }
 
-  async function changeQuantity(item, quantity) {
-    try {
-      setBusy(true);
-      setCart(
-        await updateCartItem({
-          productId: item.product._id,
-          variantId: item.variant._id,
-          quantity,
-        }),
-      );
-    } catch (reason) {
-      setFeedback({
-        type: "error",
-        text: reason.message || "Không thể cập nhật số lượng.",
-      });
-      try {
-        await refreshCart();
-      } catch {
-        /* Keep the current cart visible. */
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function deleteItem(item) {
-    try {
-      setBusy(true);
-      setCart(
-        await removeCartItem({
-          productId: item.product._id,
-          variantId: item.variant?._id,
-        }),
-      );
-    } catch (reason) {
-      setFeedback({
-        type: "error",
-        text: reason.message || "Không thể xóa sản phẩm.",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function emptyCart() {
-    const accepted = await confirm({
-      title: "Xóa toàn bộ giỏ hàng?",
-      description: "Tất cả sản phẩm trong giỏ sẽ bị xóa.",
-      confirmLabel: "Xóa tất cả",
-    });
-    if (!accepted) return;
-    setBusy(true);
-    try {
-      setCart(await clearCart());
-      setFeedback({
-        type: "success",
-        text: "Đã xóa toàn bộ sản phẩm khỏi giỏ hàng.",
-      });
-    } catch (reason) {
-      setFeedback({
-        type: "error",
-        text:
-          reason.response?.data?.message ||
-          reason.message ||
-          "Không thể xóa giỏ hàng.",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function placeOrder(event) {
     event.preventDefault();
     try {
@@ -631,7 +537,7 @@ function App() {
   }
 
   function openProduct(product) {
-    navigate(`/products/${product._id}`, {
+    navigate(productDetailPath(product._id), {
       state: { from: `${location.pathname}${location.search}` },
     });
   }
@@ -719,7 +625,7 @@ function App() {
           }
         />
         <Route
-          path="/products"
+          path={ROUTES.PRODUCTS}
           element={
             <ProductsPage
               products={products}
@@ -750,7 +656,7 @@ function App() {
           }
         />
         <Route
-          path="/products/:productId"
+          path={ROUTES.PRODUCT_DETAIL}
           element={
             <ProductDetailPage
               key={location.pathname}
@@ -766,7 +672,7 @@ function App() {
           }
         />
         <Route
-          path="/stores/slug/:slug"
+          path={ROUTES.STOREFRONT}
           element={
             <StorefrontLayout>
               <StorefrontPage
@@ -778,7 +684,7 @@ function App() {
           }
         />
         <Route
-          path="/cart"
+          path={ROUTES.CART}
           element={protectedPage(
             <CartPage
               cart={cart}
@@ -796,7 +702,7 @@ function App() {
           )}
         />
         <Route
-          path="/checkout"
+          path={ROUTES.CHECKOUT}
           element={protectedPage(
             <CheckoutPage
               cart={cart}
@@ -815,7 +721,7 @@ function App() {
           )}
         />
         <Route
-          path="/orders"
+          path={ROUTES.ORDERS}
           element={protectedPage(
             <OrdersPage
               orders={orders}
@@ -864,7 +770,7 @@ function App() {
           )}
         />
         <Route
-          path="/profile"
+          path={ROUTES.PROFILE}
           element={protectedPage(
             <ProfilePage
               user={user}
@@ -874,7 +780,7 @@ function App() {
           )}
         />
         <Route
-          path="/wishlist"
+          path={ROUTES.WISHLIST}
           element={protectedPage(
             <WishlistPage
               products={wishlist}
@@ -887,7 +793,7 @@ function App() {
           )}
         />
         <Route
-          path="/admin"
+          path={ROUTES.ADMIN}
           element={
             !authChecked ? null : user?.role === "ADMIN" ? (
               <AdminLayout user={user}>
@@ -900,12 +806,12 @@ function App() {
                 />
               </AdminLayout>
             ) : (
-              <Navigate to={user ? "/seller" : "/"} replace />
+              <Navigate to={user ? ROUTES.SELLER : ROUTES.HOME} replace />
             )
           }
         />
         <Route
-          path="/seller"
+          path={ROUTES.SELLER}
           element={
             !authChecked ? null : user && user.role !== "ADMIN" ? (
               <SellerLayout user={user}>
@@ -917,12 +823,15 @@ function App() {
                 />
               </SellerLayout>
             ) : (
-              <Navigate to={user?.role === "ADMIN" ? "/admin" : "/"} replace />
+              <Navigate
+                to={user?.role === "ADMIN" ? ROUTES.ADMIN : ROUTES.HOME}
+                replace
+              />
             )
           }
         />
         <Route
-          path="/admin/messages"
+          path={ROUTES.ADMIN_MESSAGES}
           element={
             !authChecked ? null : user?.role === "ADMIN" ? (
               <AdminLayout user={user}>
@@ -938,12 +847,12 @@ function App() {
                 </main>
               </AdminLayout>
             ) : (
-              <Navigate to="/admin" replace />
+              <Navigate to={ROUTES.ADMIN} replace />
             )
           }
         />
         <Route
-          path="/seller/messages"
+          path={ROUTES.SELLER_MESSAGES}
           element={
             !authChecked ? null : user?.role === "SELLER" ? (
               <SellerLayout user={user}>
@@ -959,7 +868,7 @@ function App() {
                 </main>
               </SellerLayout>
             ) : (
-              <Navigate to="/seller" replace />
+              <Navigate to={ROUTES.SELLER} replace />
             )
           }
         />

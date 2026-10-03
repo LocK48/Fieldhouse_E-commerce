@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { ROUTES } from "../../routes/paths";
 import "./RoleLayouts.css";
 
 export default function AdminLayout({ children, user }) {
@@ -14,13 +15,13 @@ export default function AdminLayout({ children, user }) {
         </div>
         <p className="role-caption">QUẢN TRỊ HỆ THỐNG</p>
         <nav>
-          <NavLink end to="/admin">
+          <NavLink end to={ROUTES.ADMIN}>
             Tổng quan <span>↗</span>
           </NavLink>
-          <NavLink to="/admin/messages">
+          <NavLink to={ROUTES.ADMIN_MESSAGES}>
             Hỗ trợ khách hàng <span>✳</span>
           </NavLink>
-          <NavLink to="/profile">
+          <NavLink to={ROUTES.PROFILE}>
             Hồ sơ cá nhân <span>○</span>
           </NavLink>
         </nav>

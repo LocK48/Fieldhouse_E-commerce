@@ -157,7 +157,17 @@ export default function HomePage({
           </div>
         ) : products.length ? (
           <div className="product-grid">
-            {products.map((product, index) => <ProductCard key={product._id} product={product} index={index} productImage={productImage} onOpenProduct={onOpenProduct} isWishlisted={isWishlisted} onToggleWishlist={onToggleWishlist} />)}
+            {products.map((product, index) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                index={index}
+                productImage={productImage}
+                onOpenProduct={onOpenProduct}
+                isWishlisted={isWishlisted}
+                onToggleWishlist={onToggleWishlist}
+              />
+            ))}
           </div>
         ) : (
           <div className="empty-state">

@@ -12,7 +12,11 @@ import {
 import CategoryManager from "./CategoryManager";
 import { formatCurrency, orderStatusLabels } from "../../utils/formatters";
 
-export default function AdminPage({ onFeedback, onCategoriesChanged, productImage }) {
+export default function AdminPage({
+  onFeedback,
+  onCategoriesChanged,
+  productImage,
+}) {
   const [applications, setApplications] = useState([]);
   const [products, setProducts] = useState([]);
   const [stores, setStores] = useState([]);
@@ -25,12 +29,13 @@ export default function AdminPage({ onFeedback, onCategoriesChanged, productImag
     if (refresh) setLoading(true);
     if (refresh) setError("");
     try {
-      const [nextApplications, nextStores, nextProducts, nextOrders] = await Promise.all([
-        getSellerApplications(),
-        getPendingStores(),
-        getPendingProducts(),
-        getManageableOrders(),
-      ]);
+      const [nextApplications, nextStores, nextProducts, nextOrders] =
+        await Promise.all([
+          getSellerApplications(),
+          getPendingStores(),
+          getPendingProducts(),
+          getManageableOrders(),
+        ]);
       setApplications(nextApplications);
       setStores(nextStores);
       setProducts(nextProducts);
@@ -119,9 +124,16 @@ export default function AdminPage({ onFeedback, onCategoriesChanged, productImag
     try {
       const updated = await advanceOrder(order._id);
       setOrders((items) => items.filter((item) => item._id !== order._id));
-      onFeedback("success", `Đơn hàng đã chuyển sang ${orderStatusLabels[updated.orderStatus] || updated.orderStatus}.`);
+      onFeedback(
+        "success",
+        `Đơn hàng đã chuyển sang ${orderStatusLabels[updated.orderStatus] || updated.orderStatus}.`,
+      );
     } catch (reason) {
-      setError(reason.response?.data?.message || reason.message || "Không thể cập nhật đơn hàng.");
+      setError(
+        reason.response?.data?.message ||
+          reason.message ||
+          "Không thể cập nhật đơn hàng.",
+      );
     } finally {
       setBusyId("");
     }
@@ -282,10 +294,63 @@ export default function AdminPage({ onFeedback, onCategoriesChanged, productImag
             )}
           </section>
           <section className="admin-section">
-            <div className="dashboard-toolbar"><h2>Đơn hàng cần xử lý <span>{orders.length}</span></h2></div>
-            {orders.length ? <div className="admin-queue">{orders.map((order) => <article className="admin-card" key={order._id}><div><p className="eyebrow">#{order._id.slice(-8).toUpperCase()} · {orderStatusLabels[order.orderStatus] || order.orderStatus}</p><h3>{order.user?.name || "Khách hàng"}</h3><p>{order.user?.email} · {order.items.length} mặt hàng</p><small>{order.items.map((item) => `${item.name} × ${item.quantity}`).join(" · ")}</small><p>{order.shippingAddress?.recipientName} · {order.shippingAddress?.phone} · {order.shippingAddress?.city}</p><strong>{formatCurrency(order.total)}</strong></div><div className="admin-card-actions"><button className="primary-button" disabled={busyId === order._id} onClick={() => moveOrderForward(order)}>{order.orderStatus === "PENDING" ? "Xác nhận" : order.orderStatus === "CONFIRMED" ? "Chuẩn bị" : order.orderStatus === "PROCESSING" ? "Bàn giao vận chuyển" : "Đánh dấu đã giao"}</button></div></article>)}</div> : <p className="admin-empty">Không có đơn cần xử lý.</p>}
+            <div className="dashboard-toolbar">
+              <h2>
+                Đơn hàng cần xử lý <span>{orders.length}</span>
+              </h2>
+            </div>
+            {orders.length ? (
+              <div className="admin-queue">
+                {orders.map((order) => (
+                  <article className="admin-card" key={order._id}>
+                    <div>
+                      <p className="eyebrow">
+                        #{order._id.slice(-8).toUpperCase()} ·{" "}
+                        {orderStatusLabels[order.orderStatus] ||
+                          order.orderStatus}
+                      </p>
+                      <h3>{order.user?.name || "Khách hàng"}</h3>
+                      <p>
+                        {order.user?.email} · {order.items.length} mặt hàng
+                      </p>
+                      <small>
+                        {order.items
+                          .map((item) => `${item.name} × ${item.quantity}`)
+                          .join(" · ")}
+                      </small>
+                      <p>
+                        {order.shippingAddress?.recipientName} ·{" "}
+                        {order.shippingAddress?.phone} ·{" "}
+                        {order.shippingAddress?.city}
+                      </p>
+                      <strong>{formatCurrency(order.total)}</strong>
+                    </div>
+                    <div className="admin-card-actions">
+                      <button
+                        className="primary-button"
+                        disabled={busyId === order._id}
+                        onClick={() => moveOrderForward(order)}
+                      >
+                        {order.orderStatus === "PENDING"
+                          ? "Xác nhận"
+                          : order.orderStatus === "CONFIRMED"
+                            ? "Chuẩn bị"
+                            : order.orderStatus === "PROCESSING"
+                              ? "Bàn giao vận chuyển"
+                              : "Đánh dấu đã giao"}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="admin-empty">Không có đơn cần xử lý.</p>
+            )}
           </section>
-          <CategoryManager onFeedback={onFeedback} onCategoriesChanged={onCategoriesChanged} />
+          <CategoryManager
+            onFeedback={onFeedback}
+            onCategoriesChanged={onCategoriesChanged}
+          />
         </>
       )}
     </main>

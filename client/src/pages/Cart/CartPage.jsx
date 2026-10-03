@@ -1,4 +1,5 @@
 import { formatCurrency } from "../../utils/formatters";
+import CartLineItem from "../../components/cart/CartLineItem";
 
 export default function CartPage({
   cart,
@@ -23,7 +24,18 @@ export default function CartPage({
         <h1>
           Những món đồ <em>bạn chọn.</em>
         </h1>
-        <p>{cartCount} sản phẩm {cartCount > 0 && <button className="remove-link" disabled={busy} onClick={onClearCart}>Xóa tất cả</button>}</p>
+        <p>
+          {cartCount} sản phẩm{" "}
+          {cartCount > 0 && (
+            <button
+              className="remove-link"
+              disabled={busy}
+              onClick={onClearCart}
+            >
+              Xóa tất cả
+            </button>
+          )}
+        </p>
       </div>
       {!cart.items.length ? (
         <div className="commerce-empty">
@@ -38,67 +50,14 @@ export default function CartPage({
         <div className="cart-layout">
           <section className="cart-lines">
             {cart.items.map((item) => (
-              <article
-                className={`cart-line ${item.available ? "" : "cart-line-unavailable"}`}
+              <CartLineItem
                 key={`${item.product._id}-${item.variant?._id}`}
-              >
-                <div className="cart-thumb">
-                  {productImage(item.product) ? (
-                    <img
-                      src={productImage(item.product)}
-                      alt={item.product.name}
-                    />
-                  ) : (
-                    <span>{item.product.name?.slice(0, 1)}</span>
-                  )}
-                </div>
-                <div className="cart-item-info">
-                  <p className="product-brand">
-                    {item.product.brand || "FIELDHOUSE"}
-                  </p>
-                  <h2>{item.product.name}</h2>
-                  <p>
-                    {item.variant?.name ||
-                      item.variant?.sku ||
-                      "Phiên bản mặc định"}
-                  </p>
-                  {!item.available && (
-                    <strong className="stock-warning">
-                      Sản phẩm không đủ tồn kho. Hãy giảm số lượng hoặc xóa khỏi
-                      giỏ.
-                    </strong>
-                  )}
-                  <button
-                    className="remove-link"
-                    disabled={busy}
-                    onClick={() => onRemoveItem(item)}
-                  >
-                    Xóa
-                  </button>
-                </div>
-                <div className="cart-item-end">
-                  <strong>{formatCurrency(item.subtotal)}</strong>
-                  <div className="quantity-control">
-                    <button
-                      disabled={busy || item.quantity <= 1}
-                      onClick={() => onChangeQuantity(item, item.quantity - 1)}
-                      aria-label="Giảm số lượng"
-                    >
-                      −
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button
-                      disabled={
-                        busy || item.quantity >= (item.variant?.stock || 99)
-                      }
-                      onClick={() => onChangeQuantity(item, item.quantity + 1)}
-                      aria-label="Tăng số lượng"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </article>
+                item={item}
+                busy={busy}
+                productImage={productImage}
+                onChangeQuantity={onChangeQuantity}
+                onRemoveItem={onRemoveItem}
+              />
             ))}
           </section>
           <aside className="order-summary">

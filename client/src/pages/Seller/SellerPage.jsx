@@ -4,7 +4,7 @@ import { getMyStore, createStore } from "../../api/store.api";
 import { deleteProduct, getMyProducts } from "../../api/product.api";
 import ProductForm from "../../components/product/ProductForm";
 import { formatCurrency } from "../../utils/formatters";
-import { useFeedback } from "../../components/ui/FeedbackContext";
+import { useFeedback } from "../../components/common/FeedbackContext";
 
 const statusLabels = {
   PENDING: "Đang chờ duyệt",

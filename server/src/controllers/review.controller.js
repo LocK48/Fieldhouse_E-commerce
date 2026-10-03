@@ -5,12 +5,10 @@ const getProductReviews = async (req, res) =>
     data: await service.getProductReviews(req.params.productId, req.query),
   });
 const createReview = async (req, res) =>
-  res
-    .status(201)
-    .json({
-      success: true,
-      data: { review: await service.createReview(req.user._id, req.body) },
-    });
+  res.status(201).json({
+    success: true,
+    data: { review: await service.createReview(req.user._id, req.body) },
+  });
 const deleteReview = async (req, res) => {
   await service.deleteReview(req.user._id, req.params.reviewId);
   res.json({ success: true, message: "Review deleted" });

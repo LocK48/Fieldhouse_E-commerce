@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { getProduct } from "../../api/product.api";
 import { formatCurrency } from "../../utils/formatters";
 import ProductReviews from "../../components/product/ProductReviews";
+import { ROUTES, storefrontPath } from "../../routes/paths";
 
 export default function ProductDetailPage({
   busy,
@@ -14,7 +15,7 @@ export default function ProductDetailPage({
 }) {
   const { productId } = useParams();
   const location = useLocation();
-  const productsPath = location.state?.from || "/products";
+  const productsPath = location.state?.from || ROUTES.PRODUCTS;
   const [product, setProduct] = useState(null);
   const [variantId, setVariantId] = useState("");
   const [imageIndex, setImageIndex] = useState(0);
@@ -59,7 +60,7 @@ export default function ProductDetailPage({
           <span>⌕</span>
           <h2>Không tìm thấy sản phẩm</h2>
           <p>{error || "Sản phẩm không còn được bán."}</p>
-          <Link className="primary-button" to="/products">
+          <Link className="primary-button" to={ROUTES.PRODUCTS}>
             Quay lại cửa hàng ↗
           </Link>
         </div>
@@ -186,9 +187,20 @@ export default function ProductDetailPage({
               </strong>
               {store?.description && <p>{store.description}</p>}
             </div>
-            {store?.slug && <Link className="seller-slug" to={`/stores/slug/${store.slug}`}>Xem cửa hàng ↗</Link>}
+            {store?.slug && (
+              <Link className="seller-slug" to={storefrontPath(store.slug)}>
+                Xem cửa hàng ↗
+              </Link>
+            )}
           </div>
-          {store?._id && <button className="seller-message-button" onClick={() => onOpenChat?.(store._id)}>Nhắn tin cho shop</button>}
+          {store?._id && (
+            <button
+              className="seller-message-button"
+              onClick={() => onOpenChat?.(store._id)}
+            >
+              Nhắn tin cho shop
+            </button>
+          )}
           <div className="detail-promises">
             <span>✓ Thanh toán khi nhận hàng</span>
             <span>↗ Giao hàng toàn quốc</span>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createReview, deleteReview } from "../../api/review.api";
 import { formatCurrency, orderStatusLabels } from "../../utils/formatters";
-import { useFeedback } from "../../components/ui/FeedbackContext";
+import { useFeedback } from "../../components/common/FeedbackContext";
 
 function OrderReview({ order, item, allowReview, onReviewed, onReviewDeleted }) {
   const { confirm } = useFeedback();

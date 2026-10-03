@@ -6,7 +6,7 @@ import {
   updateAddress,
 } from "../../api/address.api";
 import { changePassword, updateProfile } from "../../api/user.api";
-import { useFeedback } from "../../components/ui/FeedbackContext";
+import { useFeedback } from "../../components/common/FeedbackContext";
 
 const emptyAddress = {
   recipientName: "",

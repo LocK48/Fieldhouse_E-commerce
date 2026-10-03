@@ -3,7 +3,7 @@ import { useState } from "react";
 import { uploadProductImage } from "../../utils/uploadFile";
 
 import { deleteProductImage } from "../../api/upload.api";
-import { useFeedback } from "../ui/FeedbackContext";
+import { useFeedback } from "../common/FeedbackContext";
 
 export default function ProductImageUploader({ productId, images, onChange }) {
   const { showToast } = useFeedback();
