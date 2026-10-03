@@ -24,6 +24,8 @@ async function request(method, path, options = {}, canRefresh = true) {
     const isAuthEndpoint = [
       "/auth/login",
       "/auth/register",
+      "/auth/register/request-otp",
+      "/auth/register/verify-otp",
       "/auth/refresh",
       "/auth/logout",
     ].includes(path);

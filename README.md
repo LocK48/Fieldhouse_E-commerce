@@ -19,7 +19,7 @@ Requirements: Node.js 20.19+ (or 22.12+), MongoDB, and npm.
    Copy-Item server/.env.example server/.env
    ```
 
-   Set `MONGO_URI`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` in `server/.env`. `CLIENT_URL` defaults to the Vite address shown in the example. R2 values are optional until uploading product images.
+   Set `MONGO_URI`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` in `server/.env`. For email OTP registration, also configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM` with your email provider's SMTP details. Set a private `OTP_HASH_SECRET` for hashing verification codes. `CLIENT_URL` defaults to the Vite address shown in the example. R2 values are optional until uploading product images.
 
 2. Install and start the API:
 
@@ -56,7 +56,7 @@ These accounts and credentials are for local development only. Do not reuse them
 
 ## Main API routes
 
-All routes use the `/api/v1` prefix. Public routes include `GET /products`, `GET /products/:id`, `GET /categories`, and `GET /health`. Authentication is under `/auth`; seller store and product routes are under `/stores` and `/products`; admin review routes are under `/admin`.
+All routes use the `/api/v1` prefix. Public routes include `GET /products`, `GET /products/:id`, `GET /categories`, and `GET /health`. Authentication is under `/auth`; registration requests an OTP at `POST /auth/register/request-otp` and creates the account at `POST /auth/register/verify-otp`. Seller store and product routes are under `/stores` and `/products`; admin review routes are under `/admin`.
 
 ### Cart and COD orders
 

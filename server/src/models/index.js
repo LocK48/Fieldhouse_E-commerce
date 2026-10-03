@@ -13,6 +13,7 @@ const Coupon = require("./Coupon");
 const Conversation = require("./Conversation");
 const Message = require("./Message");
 const Notification = require("./Notification");
+const RegistrationOtp = require("./RegistrationOtp");
 
 module.exports = {
   User,
@@ -30,4 +31,5 @@ module.exports = {
   Conversation,
   Message,
   Notification,
+  RegistrationOtp,
 };

@@ -8,7 +8,7 @@ import {
 } from "react-router-dom";
 import { getCart } from "./api/cart.api";
 import { getCategories } from "./api/category.api";
-import { getCurrentUser, login, logout, registerAccount } from "./api/auth.api";
+import { getCurrentUser, login, logout } from "./api/auth.api";
 import { cancelMyOrder, createCodOrder, getMyOrders } from "./api/order.api";
 import { getProducts } from "./api/product.api";
 import { getAddresses } from "./api/address.api";
@@ -17,7 +17,6 @@ import {
   getWishlist,
   removeWishlistProduct,
 } from "./api/wishlist.api";
-import AuthDialog from "./components/auth/AuthDialog";
 import SiteHeader from "./components/layout/SiteHeader";
 import { useFeedback } from "./components/common/FeedbackContext";
 import CartPage from "./pages/Cart/CartPage";
@@ -39,6 +38,8 @@ import CustomerChatWidget from "./components/chat/CustomerChatWidget";
 import { useCommerceStore } from "./store/useCommerceStore";
 import { useCartActions } from "./hooks/useCartActions";
 import { ROUTES, productDetailPath } from "./routes/paths";
+import LoginPage from "./pages/Auth/LoginPage";
+import RegisterPage from "./pages/Auth/RegisterPage";
 import mercurialImage from "../../mercurial.webp";
 import "./App.css";
 import "./Commerce.css";
@@ -54,6 +55,9 @@ function App() {
   const setFeedback = ({ type, text }) => showToast(text, type);
   const location = useLocation();
   const navigate = useNavigate();
+  const isAuthPage = [ROUTES.LOGIN, ROUTES.REGISTER].includes(
+    location.pathname,
+  );
   const view = location.pathname.startsWith("/products/")
     ? "product-detail"
     : {
@@ -114,7 +118,6 @@ function App() {
   const clearCommerceState = useCommerceStore(
     (state) => state.clearCommerceState,
   );
-  const [authOpen, setAuthOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [pendingAdd, setPendingAdd] = useState(null);
   const [pendingWishlistProduct, setPendingWishlistProduct] = useState(null);
@@ -148,7 +151,7 @@ function App() {
           ? `${location.pathname}${location.search}`
           : "shop",
       );
-      setAuthOpen(true);
+      navigate(ROUTES.LOGIN);
       return;
     }
     setChatStartRequest((current) => ({ id: (current?.id || 0) + 1, storeId }));
@@ -265,7 +268,7 @@ function App() {
           ? `${location.pathname}${location.search}`
           : "shop",
       );
-      setAuthOpen(true);
+      navigate(ROUTES.LOGIN);
       return;
     }
     try {
@@ -291,8 +294,8 @@ function App() {
 
   async function openWishlist() {
     if (!user) {
-      setAuthOpen(true);
       setReturnView("wishlist");
+      navigate(ROUTES.LOGIN);
       return;
     }
     setAccountMenuOpen(false);
@@ -312,8 +315,8 @@ function App() {
 
   async function openProfile() {
     if (!user) {
-      setAuthOpen(true);
       setReturnView("profile");
+      navigate(ROUTES.LOGIN);
       return;
     }
     setAccountMenuOpen(false);
@@ -340,32 +343,22 @@ function App() {
           ? `${location.pathname}${location.search}`
           : "shop",
       );
-      setAuthOpen(true);
+      navigate(ROUTES.LOGIN);
       return;
     }
     putItemInCart(product, variantId);
   }
 
-  async function handleAuth(mode, form) {
-    if (mode === "register")
-      await registerAccount({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-      });
+  async function handleAuth(form) {
     const signedIn = await login(form.email, form.password);
     setUser(signedIn);
     setShipping((value) => ({
       ...value,
       recipientName: signedIn.name || value.recipientName,
     }));
-    setAuthOpen(false);
     setFeedback({
       type: "success",
-      text:
-        mode === "register"
-          ? "Tạo tài khoản thành công. Bạn đã đăng nhập."
-          : `Chào mừng trở lại, ${signedIn.name}.`,
+      text: `Chào mừng trở lại, ${signedIn.name}.`,
     });
     try {
       setCart(await getCart());
@@ -427,7 +420,7 @@ function App() {
   async function openCart() {
     if (!user) {
       setReturnView("cart");
-      setAuthOpen(true);
+      navigate(ROUTES.LOGIN);
       return;
     }
     try {
@@ -489,7 +482,7 @@ function App() {
   async function openOrders() {
     if (!user) {
       setReturnView("orders");
-      setAuthOpen(true);
+      navigate(ROUTES.LOGIN);
       setAccountMenuOpen(false);
       return;
     }
@@ -542,19 +535,13 @@ function App() {
     });
   }
 
-  function closeAuth() {
-    setAuthOpen(false);
-    setPendingAdd(null);
-    setPendingWishlistProduct(null);
-    setPendingChat(null);
-    setReturnView("shop");
-  }
-
   const protectedPage = (content) =>
     authChecked ? user ? content : <Navigate to="/" replace /> : null;
 
   return (
-    <div className="app-shell mx-0 min-h-screen w-full max-w-none overflow-hidden bg-[#faf9f6] text-[#18211d]">
+    <div
+      className={`app-shell mx-0 min-h-screen w-full max-w-none overflow-hidden bg-[#faf9f6] text-[#18211d] ${isAuthPage ? "auth-shell" : ""}`}
+    >
       <div className="announcement">
         Giao hàng miễn phí cho đơn từ 1.500.000₫ <span>·</span> Thanh toán khi
         nhận hàng
@@ -581,7 +568,10 @@ function App() {
         }}
         onOpenOrders={openOrders}
         onToggleAccount={() => setAccountMenuOpen((open) => !open)}
-        onOpenAuth={() => setAuthOpen(true)}
+        onOpenAuth={() => {
+          setReturnView("shop");
+          navigate(ROUTES.LOGIN);
+        }}
         onLogout={handleLogout}
         onOpenCart={openCart}
         onOpenManagement={() => {
@@ -594,6 +584,14 @@ function App() {
       />
 
       <Routes>
+        <Route
+          path={ROUTES.LOGIN}
+          element={<LoginPage onLogin={handleAuth} />}
+        />
+        <Route
+          path={ROUTES.REGISTER}
+          element={<RegisterPage onVerified={handleAuth} />}
+        />
         <Route
           path="/"
           element={
@@ -887,7 +885,6 @@ function App() {
       </footer>
 
       <CustomerChatWidget user={user} startRequest={chatStartRequest} />
-      {authOpen && <AuthDialog onClose={closeAuth} onSubmit={handleAuth} />}
     </div>
   );
 }

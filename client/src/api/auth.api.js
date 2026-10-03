@@ -1,7 +1,12 @@
 import api from "./axios";
 
-export async function registerAccount(data) {
-  const response = await api.post("/auth/register", data);
+export async function requestRegistrationOtp(data) {
+  const response = await api.post("/auth/register/request-otp", data);
+  return response.data.data;
+}
+
+export async function verifyRegistrationOtp(email, code) {
+  const response = await api.post("/auth/register/verify-otp", { email, code });
   return response.data.data.user;
 }
 

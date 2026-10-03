@@ -1,5 +1,7 @@
 export const ROUTES = Object.freeze({
   HOME: "/",
+  LOGIN: "/login",
+  REGISTER: "/register",
   PRODUCTS: "/products",
   PRODUCT_DETAIL: "/products/:productId",
   STOREFRONT: "/stores/slug/:slug",

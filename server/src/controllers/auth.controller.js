@@ -1,14 +1,22 @@
 const authService = require("../services/auth.service");
 
-const register = async (req, res) => {
-  const user = await authService.register(req.body);
+const requestRegistrationOtp = async (req, res) => {
+  const result = await authService.requestRegistrationOtp(req.body);
+
+  res.status(200).json({
+    success: true,
+    message: "Verification code sent",
+    data: result,
+  });
+};
+
+const verifyRegistrationOtp = async (req, res) => {
+  const user = await authService.verifyRegistrationOtp(req.body);
 
   res.status(201).json({
     success: true,
-    message: "Account created successfully",
-    data: {
-      user,
-    },
+    message: "Email verified and account created",
+    data: { user },
   });
 };
 
@@ -62,9 +70,10 @@ const getMe = async (req, res) => {
 };
 
 module.exports = {
-  register,
   login,
   refresh,
   logout,
   getMe,
+  requestRegistrationOtp,
+  verifyRegistrationOtp,
 };

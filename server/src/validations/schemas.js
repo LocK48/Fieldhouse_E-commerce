@@ -130,6 +130,10 @@ module.exports = {
         "Password must be at most 72 bytes",
       ),
   }),
+  authVerifyRegistrationOtp: z.object({
+    email,
+    code: z.string().regex(/^\d{6}$/),
+  }),
   authLogin: z.object({
     email,
     password: z
