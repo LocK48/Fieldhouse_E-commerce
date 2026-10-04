@@ -18,6 +18,9 @@ const registerChatSocket = (io) => {
   });
 
   io.on("connection", (socket) => {
+    socket.join(`user:${socket.data.user._id}`);
+    if (socket.data.user.role === "ADMIN") socket.join("role:ADMIN");
+
     socket.on("chat:join", async ({ conversationId } = {}, acknowledge = () => {}) => {
       try {
         const conversation = await chatService.getAccessibleConversation(socket.data.user, conversationId);
@@ -30,9 +33,16 @@ const registerChatSocket = (io) => {
 
     socket.on("chat:message:send", async ({ conversationId, content } = {}, acknowledge = () => {}) => {
       try {
-        const message = await chatService.sendMessage(socket.data.user, conversationId, content);
-        io.to(`conversation:${conversationId}`).emit("chat:message:new", message);
-        acknowledge({ success: true, message });
+        const result = await chatService.sendMessage(socket.data.user, conversationId, content);
+        const rooms = [
+          `conversation:${conversationId}`,
+          ...result.participantIds
+            .filter((id) => id !== String(socket.data.user._id))
+            .map((id) => `user:${id}`),
+        ];
+        if (result.type === "ADMIN") rooms.push("role:ADMIN");
+        io.to(rooms).emit("chat:message:new", result.message);
+        acknowledge({ success: true, message: result.message });
       } catch (error) {
         acknowledge({ success: false, message: error.message || "Could not send message" });
       }

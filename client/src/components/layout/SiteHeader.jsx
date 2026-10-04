@@ -53,7 +53,7 @@ export default function SiteHeader({
             Đơn hàng
           </button>
         )}
-        {user?.role === "CUSTOMER" && (
+        {user && (
           <button className="nav-link" onClick={onOpenChat}>
             Nhắn tin
           </button>

@@ -9,6 +9,11 @@ const router = express.Router();
 router.use(authenticate);
 router.get("/conversations", asyncHandler(controller.listConversations));
 router.post("/conversations", validate(schemas.chatConversationCreate), asyncHandler(controller.createConversation));
-router.get("/conversations/:conversationId/messages", validate(schemas.idParams("conversationId"), "params"), asyncHandler(controller.getMessages));
+router.get(
+  "/conversations/:conversationId/messages",
+  validate(schemas.idParams("conversationId"), "params"),
+  validate(schemas.chatMessagesQuery, "query"),
+  asyncHandler(controller.getMessages),
+);
 
 module.exports = router;

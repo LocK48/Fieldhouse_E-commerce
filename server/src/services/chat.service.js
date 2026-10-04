@@ -1,14 +1,46 @@
 const { Conversation, Message, Store } = require("../models");
 const AppError = require("../utils/AppError");
 
+const upsertConversation = async (conversationKey, fields) => {
+  try {
+    return await Conversation.findOneAndUpdate(
+      { conversationKey },
+      { $setOnInsert: { ...fields, conversationKey } },
+      { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true },
+    );
+  } catch (error) {
+    if (error.code !== 11000) throw error;
+    return Conversation.findOne({ conversationKey });
+  }
+};
+
+const bindConversationKey = async (conversation, conversationKey) => {
+  try {
+    await Conversation.updateOne(
+      { _id: conversation._id, conversationKey: { $exists: false } },
+      { $set: { conversationKey } },
+    );
+    return conversation;
+  } catch (error) {
+    if (error.code !== 11000) throw error;
+    return Conversation.findOne({ conversationKey });
+  }
+};
+
 const getConversations = async (user) => {
   let filter;
   if (user.role === "ADMIN") {
-    filter = { type: "ADMIN" };
+    filter = { $or: [{ type: "ADMIN" }, { type: "STORE", participants: user._id }] };
   } else if (user.role === "SELLER") {
     const store = await Store.findOne({ owner: user._id });
-    if (!store) return [];
-    filter = { type: "STORE", store: store._id };
+    filter = {
+      $or: [
+        // Sellers may also contact other shops as buyers. Include every
+        // conversation they participate in, not only their own store inbox.
+        { participants: user._id },
+        ...(store ? [{ type: "STORE", store: store._id }] : []),
+      ],
+    };
   } else {
     filter = { participants: user._id };
   }
@@ -22,14 +54,18 @@ const getConversations = async (user) => {
 };
 
 const createConversation = async (user, { type, storeId }) => {
-  if (user.role !== "CUSTOMER") {
-    throw new AppError("Only customers can start a conversation", 403);
-  }
-
   if (type === "ADMIN") {
+    if (user.role === "ADMIN") {
+      throw new AppError("Admin accounts cannot open a support conversation with themselves", 400);
+    }
+    const conversationKey = `admin:${user._id}`;
     const existing = await Conversation.findOne({ type: "ADMIN", store: null, participants: user._id });
-    if (existing) return existing;
-    return Conversation.create({ type: "ADMIN", store: null, participants: [user._id] });
+    if (existing) return bindConversationKey(existing, conversationKey);
+    return upsertConversation(conversationKey, {
+      type: "ADMIN",
+      store: null,
+      participants: [user._id],
+    });
   }
 
   const store = await Store.findOne({ _id: storeId, status: "ACTIVE" }).select("_id owner");
@@ -37,13 +73,19 @@ const createConversation = async (user, { type, storeId }) => {
   if (String(store.owner) === String(user._id)) {
     throw new AppError("You cannot start a customer conversation with your own store", 400);
   }
+  const participants = [String(user._id), String(store.owner)].sort();
+  const conversationKey = `store:${store._id}:${participants.join(":")}`;
   const existing = await Conversation.findOne({
     type: "STORE",
     store: store._id,
     participants: { $all: [user._id, store.owner] },
   });
-  if (existing) return existing;
-  return Conversation.create({ type: "STORE", store: store._id, participants: [user._id, store.owner] });
+  if (existing) return bindConversationKey(existing, conversationKey);
+  return upsertConversation(conversationKey, {
+    type: "STORE",
+    store: store._id,
+    participants: [user._id, store.owner],
+  });
 };
 
 const getAccessibleConversation = async (user, conversationId) => {
@@ -62,17 +104,36 @@ const getAccessibleConversation = async (user, conversationId) => {
   return conversation;
 };
 
-const getMessages = async (user, conversationId) => {
+const getMessages = async (user, conversationId, { before, limit = 50 } = {}) => {
   const conversation = await getAccessibleConversation(user, conversationId);
+  const pageSize = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  const filter = { conversation: conversation._id };
+  if (before) {
+    const cursor = await Message.findOne({ _id: before, conversation: conversation._id })
+      .select("_id createdAt")
+      .lean();
+    if (!cursor) throw new AppError("Invalid message history cursor", 400);
+    filter.$or = [
+      { createdAt: { $lt: cursor.createdAt } },
+      { createdAt: cursor.createdAt, _id: { $lt: cursor._id } },
+    ];
+  }
   await Message.updateMany(
     { conversation: conversation._id, sender: { $ne: user._id }, isRead: false },
     { $set: { isRead: true } },
   );
-  return Message.find({ conversation: conversation._id })
+  const results = await Message.find(filter)
     .populate("sender", "name avatar role")
-    .sort({ createdAt: 1 })
-    .limit(300)
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(pageSize + 1)
     .lean();
+  const hasMore = results.length > pageSize;
+  const messages = results.slice(0, pageSize).reverse();
+  return {
+    messages,
+    hasMore,
+    nextCursor: hasMore ? String(messages[0]._id) : null,
+  };
 };
 
 const sendMessage = async (user, conversationId, input) => {
@@ -87,7 +148,19 @@ const sendMessage = async (user, conversationId, input) => {
     { _id: conversation._id },
     { $set: { lastMessage: message._id, lastMessageAt: message.createdAt } },
   );
-  return Message.findById(message._id).populate("sender", "name avatar role").lean();
+  const populatedMessage = await Message.findById(message._id)
+    .populate("sender", "name avatar role")
+    .lean();
+  const participantIds = conversation.participants.map(String);
+  if (conversation.store) {
+    const store = await Store.findById(conversation.store).select("owner").lean();
+    if (store?.owner) participantIds.push(String(store.owner));
+  }
+  return {
+    message: populatedMessage,
+    participantIds: [...new Set(participantIds)],
+    type: conversation.type,
+  };
 };
 
 module.exports = { getConversations, createConversation, getAccessibleConversation, getMessages, sendMessage };

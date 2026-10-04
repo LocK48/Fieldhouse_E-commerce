@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { refreshAccessToken } from "../../api/axios";
 import {
   createConversation,
   getConversations,
@@ -27,11 +28,19 @@ export default function ChatWorkspace({
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [historyCursor, setHistoryCursor] = useState(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [connected, setConnected] = useState(false);
   const [sending, setSending] = useState(false);
   const socketRef = useRef(null);
   const selectedIdRef = useRef(null);
+  const messageRequestRef = useRef(0);
   const endRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const preserveMessageScrollRef = useRef(false);
+  const conversationsRef = useRef([]);
+  const refreshingSocketTokenRef = useRef(false);
   const activeConversationRef = useRef(activeConversation);
   const activeConversationId = activeConversation?._id;
   const ownId = String(user?.id || user?._id || "");
@@ -40,6 +49,7 @@ export default function ChatWorkspace({
     async (selectId) => {
       try {
         const next = await getConversations();
+        conversationsRef.current = next;
         setConversations(next);
         if (selectId) {
           const selected = next.find((item) => item._id === selectId) || null;
@@ -73,6 +83,7 @@ export default function ChatWorkspace({
           ...(storeId ? { storeId } : {}),
         });
         const next = await getConversations();
+        conversationsRef.current = next;
         setConversations(next);
         const selected =
           next.find((item) => item._id === created._id) || created;
@@ -110,9 +121,27 @@ export default function ChatWorkspace({
       transports: ["websocket", "polling"],
     });
     socketRef.current = socket;
-    socket.on("connect", () => setConnected(true));
+    socket.on("connect", () => {
+      refreshingSocketTokenRef.current = false;
+      setConnected(true);
+    });
     socket.on("disconnect", () => setConnected(false));
-    socket.on("connect_error", () => setConnected(false));
+    socket.on("connect_error", (error) => {
+      setConnected(false);
+      if (
+        refreshingSocketTokenRef.current ||
+        !/expired|invalid|authentication required/i.test(error.message || "")
+      ) return;
+      refreshingSocketTokenRef.current = true;
+      refreshAccessToken()
+        .then((token) => {
+          socket.auth = { token };
+          socket.connect();
+        })
+        .catch(() => {
+          // Avoid retrying the refresh endpoint on every Socket.IO reconnect attempt.
+        });
+    });
     socket.on("chat:message:new", (message) => {
       if (String(message.conversation) === String(selectedIdRef.current)) {
         setMessages((items) =>
@@ -121,10 +150,12 @@ export default function ChatWorkspace({
             : [...items, message],
         );
       }
-      setConversations((items) =>
-        items
+      const exists = conversationsRef.current.some(
+        (item) => String(item._id) === String(message.conversation),
+      );
+      const next = conversationsRef.current
           .map((item) =>
-            item._id === message.conversation
+            String(item._id) === String(message.conversation)
               ? {
                   ...item,
                   lastMessage: message,
@@ -135,8 +166,15 @@ export default function ChatWorkspace({
           .sort(
             (a, b) =>
               new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0),
-          ),
-      );
+          );
+      conversationsRef.current = next;
+      setConversations(next);
+      if (!exists) {
+        getConversations().then((latest) => {
+          conversationsRef.current = latest;
+          setConversations(latest);
+        }).catch(() => {});
+      }
     });
     return () => {
       socket.disconnect();
@@ -146,20 +184,64 @@ export default function ChatWorkspace({
 
   useEffect(() => {
     selectedIdRef.current = activeConversationId || null;
-    if (!activeConversationId) return;
+    const requestId = ++messageRequestRef.current;
+    if (!activeConversationId) {
+      setMessages([]);
+      setMessagesLoading(false);
+      setHistoryHasMore(false);
+      setHistoryCursor(null);
+      return;
+    }
     setMessagesLoading(true);
     getMessages(activeConversationId)
-      .then(setMessages)
+      .then((page) => {
+        if (requestId === messageRequestRef.current) {
+          setMessages(page.messages);
+          setHistoryHasMore(page.hasMore);
+          setHistoryCursor(page.nextCursor);
+        }
+      })
       .catch((reason) =>
-        showToast(
-          reason.response?.data?.message ||
-            reason.message ||
-            "Không tải được tin nhắn.",
-          "error",
-        ),
+        {
+          if (requestId === messageRequestRef.current) {
+            showToast(
+              reason.response?.data?.message ||
+                reason.message ||
+                "Không tải được tin nhắn.",
+              "error",
+            );
+          }
+        },
       )
-      .finally(() => setMessagesLoading(false));
+      .finally(() => {
+        if (requestId === messageRequestRef.current) setMessagesLoading(false);
+      });
   }, [activeConversationId, showToast]);
+
+  async function loadOlderMessages() {
+    if (!activeConversationId || !historyHasMore || !historyCursor || loadingOlder) return;
+    const container = messagesContainerRef.current;
+    const previousHeight = container?.scrollHeight || 0;
+    setLoadingOlder(true);
+    try {
+      const page = await getMessages(activeConversationId, { before: historyCursor });
+      if (String(selectedIdRef.current) !== String(activeConversationId)) return;
+      setMessages((current) => {
+        const known = new Set(current.map((message) => String(message._id)));
+        preserveMessageScrollRef.current = true;
+        return [...page.messages.filter((message) => !known.has(String(message._id))), ...current];
+      });
+      setHistoryHasMore(page.hasMore);
+      setHistoryCursor(page.nextCursor);
+      requestAnimationFrame(() => {
+        if (container) container.scrollTop += container.scrollHeight - previousHeight;
+      });
+    } catch (reason) {
+      showToast(reason.message || "Không tải được tin nhắn cũ.", "error");
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
 
   useEffect(() => {
     if (!connected || !activeConversationId) return;
@@ -177,6 +259,10 @@ export default function ChatWorkspace({
   }, [connected, activeConversationId, showToast]);
 
   useEffect(() => {
+    if (preserveMessageScrollRef.current) {
+      preserveMessageScrollRef.current = false;
+      return;
+    }
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -244,7 +330,7 @@ export default function ChatWorkspace({
               {mode === "admin"
                 ? "Hỗ trợ khách hàng"
                 : mode === "seller"
-                  ? "Tin nhắn khách hàng"
+                  ? "Tin nhắn & hỗ trợ"
                   : "Tin nhắn"}
             </h2>
           </div>
@@ -254,10 +340,10 @@ export default function ChatWorkspace({
             </button>
           )}
         </header>
-        {mode === "customer" && (
+        {(mode === "customer" || mode === "seller") && (
           <div className="chat-start-actions">
             <button onClick={() => startConversation("ADMIN")}>
-              ＋ Chat với CSKH
+              ＋ Chat với CSKH / báo lỗi
             </button>
           </div>
         )}
@@ -322,7 +408,16 @@ export default function ChatWorkspace({
                 </small>
               </div>
             </header>
-            <div className="chat-messages">
+            <div className="chat-messages" ref={messagesContainerRef}>
+              {!messagesLoading && historyHasMore && (
+                <button
+                  className="chat-load-older"
+                  onClick={loadOlderMessages}
+                  disabled={loadingOlder}
+                >
+                  {loadingOlder ? "Đang tải…" : "Tải tin nhắn cũ hơn"}
+                </button>
+              )}
               {messagesLoading ? (
                 <p className="chat-empty">Đang tải tin nhắn…</p>
               ) : (
@@ -383,9 +478,9 @@ export default function ChatWorkspace({
             <span>✳</span>
             <h3>Cuộc trò chuyện của bạn</h3>
             <p>Chọn hội thoại để đọc tin nhắn hoặc bắt đầu liên hệ.</p>
-            {mode === "customer" && (
+            {(mode === "customer" || mode === "seller") && (
               <button onClick={() => startConversation("ADMIN")}>
-                Liên hệ CSKH
+                Liên hệ CSKH / báo lỗi
               </button>
             )}
           </div>

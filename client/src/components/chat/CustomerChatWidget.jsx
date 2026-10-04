@@ -10,14 +10,14 @@ export default function CustomerChatWidget({ user, startRequest }) {
       setOpen(true);
     }
   }, [startRequest]);
-  if (!user || user.role !== "CUSTOMER") return null;
+  if (!user) return null;
   return (
     <div className="customer-chat-launcher">
       {open ? (
         <ChatWorkspace
           key={startRequest?.id || "default"}
           user={user}
-          mode="customer"
+          mode={user.role === "ADMIN" ? "admin" : user.role === "SELLER" ? "seller" : "customer"}
           initialStoreId={startRequest?.storeId}
           onClose={() => setOpen(false)}
         />

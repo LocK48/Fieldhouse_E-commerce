@@ -10,7 +10,11 @@ export async function createConversation(input) {
   return response.data.data.conversation;
 }
 
-export async function getMessages(conversationId) {
-  const response = await api.get(`/chat/conversations/${conversationId}/messages`);
-  return response.data.data.messages;
+export async function getMessages(conversationId, { before, limit = 50 } = {}) {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (before) query.set("before", before);
+  const response = await api.get(
+    `/chat/conversations/${conversationId}/messages?${query.toString()}`,
+  );
+  return response.data.data;
 }

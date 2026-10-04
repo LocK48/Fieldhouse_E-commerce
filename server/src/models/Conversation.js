@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const conversationSchema = new mongoose.Schema(
   {
+    conversationKey: {
+      type: String,
+      select: false,
+    },
     type: {
       type: String,
       enum: ["STORE", "ADMIN"],
@@ -50,5 +54,7 @@ conversationSchema.index({
 conversationSchema.index({
   lastMessageAt: -1,
 });
+
+conversationSchema.index({ conversationKey: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("Conversation", conversationSchema);

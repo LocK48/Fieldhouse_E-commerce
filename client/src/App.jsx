@@ -140,10 +140,6 @@ function App() {
     useCartActions({ setCart, setBusy, setFeedback, confirm });
 
   function requestChat(storeId = null) {
-    if (user && user.role !== "CUSTOMER") {
-      showToast("Tính năng chat dành cho tài khoản khách hàng.", "error");
-      return;
-    }
     if (!user) {
       setPendingChat({ storeId });
       setReturnView(

@@ -15,12 +15,13 @@ const createConversation = async (req, res) => {
   res.status(201).json({ success: true, data: { conversation } });
 };
 
-const getMessages = async (req, res) =>
-  res.json({
-    success: true,
-    data: {
-      messages: await service.getMessages(req.user, req.params.conversationId),
-    },
-  });
+const getMessages = async (req, res) => {
+  const page = await service.getMessages(
+    req.user,
+    req.params.conversationId,
+    req.query,
+  );
+  res.json({ success: true, data: page });
+};
 
 module.exports = { listConversations, createConversation, getMessages };

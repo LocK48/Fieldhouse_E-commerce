@@ -213,6 +213,20 @@
   background:
     radial-gradient(ellipse at top right, #f4f7ed 0, transparent 42%), #fff;
 }
+.chat-load-older {
+  align-self: center;
+  padding: 7px 12px;
+  border: 1px solid #e8ebe2;
+  border-radius: 999px;
+  background: #f7f8f4;
+  color: #59664c;
+  font-size: 11px;
+  cursor: pointer;
+}
+.chat-load-older:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 .chat-message-row {
   display: flex;
   max-width: 78%;

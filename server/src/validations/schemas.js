@@ -243,5 +243,9 @@ module.exports = {
     path: ["storeId"],
     message: "A store is required to contact a seller",
   }),
+  chatMessagesQuery: z.object({
+    before: objectId.optional(),
+    limit: z.string().max(3).regex(/^\d+$/).refine((value) => Number(value) >= 1 && Number(value) <= 100).optional(),
+  }),
   chatMessage: z.object({ content: nonEmpty(2000) }),
 };

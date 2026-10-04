@@ -11,6 +11,34 @@ export const resolveMediaUrl = (url, key) => {
 };
 let refreshInFlight;
 
+export async function refreshAccessToken() {
+  if (refreshInFlight) return refreshInFlight;
+  const refreshToken = localStorage.getItem("fieldhouse-refresh-token");
+  if (!refreshToken) throw new Error("Your session has expired");
+
+  refreshInFlight = fetch(`${baseURL}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ refreshToken }),
+  })
+    .then(async (refreshResponse) => {
+      const refreshData = await refreshResponse.json().catch(() => ({}));
+      if (!refreshResponse.ok || !refreshData.data?.accessToken) {
+        throw new Error(refreshData.message || "Your session has expired");
+      }
+      localStorage.setItem("fieldhouse-access-token", refreshData.data.accessToken);
+      if (refreshData.data.refreshToken) {
+        localStorage.setItem("fieldhouse-refresh-token", refreshData.data.refreshToken);
+      }
+      return refreshData.data.accessToken;
+    })
+    .finally(() => {
+      refreshInFlight = undefined;
+    });
+  return refreshInFlight;
+}
+
 async function request(method, path, options = {}, canRefresh = true) {
   const token = localStorage.getItem("fieldhouse-access-token");
   const headers = { ...(options.headers || {}) };
@@ -45,38 +73,7 @@ async function request(method, path, options = {}, canRefresh = true) {
       refreshToken
     ) {
       try {
-        if (!refreshInFlight) {
-          refreshInFlight = fetch(`${baseURL}/auth/refresh`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ refreshToken }),
-          })
-            .then(async (refreshResponse) => {
-              const refreshData = await refreshResponse
-                .json()
-                .catch(() => ({}));
-              if (!refreshResponse.ok || !refreshData.data?.accessToken) {
-                throw new Error(
-                  refreshData.message || "Your session has expired",
-                );
-              }
-              localStorage.setItem(
-                "fieldhouse-access-token",
-                refreshData.data.accessToken,
-              );
-              if (refreshData.data.refreshToken) {
-                localStorage.setItem(
-                  "fieldhouse-refresh-token",
-                  refreshData.data.refreshToken,
-                );
-              }
-            })
-            .finally(() => {
-              refreshInFlight = undefined;
-            });
-        }
-        await refreshInFlight;
+        await refreshAccessToken();
         return request(method, path, options, false);
       } catch {
         localStorage.removeItem("fieldhouse-access-token");
@@ -96,6 +93,8 @@ const api = {
   get: (path, options) => request("GET", path, options),
   post: (path, data, options = {}) =>
     request("POST", path, { ...options, data }),
+  put: (path, data, options = {}) =>
+    request("PUT", path, { ...options, data }),
   patch: (path, data, options = {}) =>
     request("PATCH", path, { ...options, data }),
   delete: (path, options) => request("DELETE", path, options),
