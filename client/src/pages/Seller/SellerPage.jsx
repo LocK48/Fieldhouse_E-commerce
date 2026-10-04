@@ -15,6 +15,7 @@ const statusLabels = {
 
 export default function SellerPage({
   user,
+  categories = [],
   onUserChange,
   onFeedback,
   productImage,
@@ -405,6 +406,7 @@ export default function SellerPage({
                 <h2>{editing ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}</h2>
                 <ProductForm
                   key={editing?._id || "new"}
+                  categories={categories}
                   product={editing || undefined}
                   onSaved={async () => {
                     setEditing(undefined);

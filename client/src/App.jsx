@@ -817,6 +817,7 @@ function App() {
               <SellerLayout user={user}>
                 <SellerPage
                   user={user}
+                  categories={categories}
                   onUserChange={setUser}
                   onFeedback={(type, text) => setFeedback({ type, text })}
                   productImage={productImage}
