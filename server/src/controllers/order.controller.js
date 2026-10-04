@@ -29,4 +29,28 @@ const cancelMyOrder = async (req, res) => {
     .json({ success: true, message: "Order cancelled", data: { order } });
 };
 
-module.exports = { createCodOrder, getMyOrders, getMyOrder, cancelMyOrder };
+const getSellerOrders = async (req, res) => {
+  const orders = await orderService.getSellerOrders(req.user._id);
+  res.status(200).json({ success: true, data: { orders } });
+};
+
+const confirmSellerPayment = async (req, res) => {
+  const order = await orderService.confirmSellerPayment(
+    req.user._id,
+    req.params.id,
+  );
+  res.status(200).json({
+    success: true,
+    message: "Seller payment confirmation saved",
+    data: { order },
+  });
+};
+
+module.exports = {
+  createCodOrder,
+  getMyOrders,
+  getMyOrder,
+  cancelMyOrder,
+  getSellerOrders,
+  confirmSellerPayment,
+};

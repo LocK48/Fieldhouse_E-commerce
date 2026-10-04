@@ -24,3 +24,13 @@ export async function cancelMyOrder(id) {
   const response = await api.patch(`/orders/${id}/cancel`);
   return response.data.data.order;
 }
+
+export async function getSellerOrders() {
+  const response = await api.get("/orders/seller");
+  return response.data.data.orders;
+}
+
+export async function confirmSellerPayment(id) {
+  const response = await api.patch(`/orders/seller/${id}/confirm-payment`);
+  return response.data.data.order;
+}

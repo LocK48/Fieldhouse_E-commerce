@@ -219,6 +219,94 @@ const getMyOrders = async (userId, { page = 1, limit = 10 } = {}) => {
   };
 };
 
+const getSellerOrders = async (userId) => {
+  const store = await Store.findOne({ owner: userId }).select("_id name").lean();
+  if (!store) throw new AppError("Store not found", 404);
+  const orders = await Order.find({ "items.store": store._id })
+    .populate("user", "name")
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
+  return orders.map((order) => {
+    const sellerItems = order.items.filter(
+      (item) => String(item.store) === String(store._id),
+    );
+    const sellerOrder = { ...order };
+    delete sellerOrder.total;
+    delete sellerOrder.subtotal;
+    delete sellerOrder.shippingFee;
+    delete sellerOrder.discount;
+    return {
+      ...sellerOrder,
+      items: sellerItems,
+      sellerSubtotal: sellerItems.reduce((sum, item) => sum + item.subtotal, 0),
+      sellerPaymentConfirmed: (order.paidStores || []).some(
+        (paidStore) => String(paidStore) === String(store._id),
+      ),
+    };
+  });
+};
+
+const confirmSellerPayment = async (userId, orderId) => {
+  const store = await Store.findOne({ owner: userId }).select("_id");
+  if (!store) throw new AppError("Store not found", 404);
+  const session = await mongoose.startSession();
+  let confirmedOrder;
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({
+        _id: orderId,
+        "items.store": store._id,
+      }).session(session);
+      if (!order) throw new AppError("Order not found", 404);
+      if (order.paymentMethod !== "COD") {
+        throw new AppError("Only COD payments can be confirmed here", 400);
+      }
+      if (order.orderStatus !== "DELIVERED") {
+        throw new AppError("Payment can only be confirmed after delivery", 400);
+      }
+      if (order.paymentStatus === "CANCELLED" || order.paymentStatus === "REFUNDED") {
+        throw new AppError("This payment cannot be confirmed", 400);
+      }
+      if (order.paymentStatus !== "PENDING" && order.paymentStatus !== "PAID") {
+        throw new AppError("This payment is not awaiting confirmation", 400);
+      }
+
+      await Order.updateOne(
+        { _id: order._id },
+        { $addToSet: { paidStores: store._id } },
+        { session },
+      );
+      const latestOrder = await Order.findById(order._id).session(session);
+      const requiredStores = [...new Set(order.items.map((item) => String(item.store)))];
+      const confirmedStores = new Set((latestOrder.paidStores || []).map(String));
+      const allStoresConfirmed = requiredStores.every((id) => confirmedStores.has(id));
+
+      if (allStoresConfirmed && latestOrder.paymentStatus !== "PAID") {
+        const update = await Order.updateOne(
+          { _id: order._id, paymentStatus: "PENDING" },
+          { $set: { paymentStatus: "PAID" } },
+          { session },
+        );
+        if (update.modifiedCount === 1) {
+          const paymentUpdate = await Payment.updateOne(
+            { order: order._id, status: "PENDING" },
+            { $set: { status: "SUCCEEDED", paidAt: new Date() } },
+            { session },
+          );
+          if (paymentUpdate.modifiedCount !== 1) {
+            throw new AppError("Pending payment record not found", 409);
+          }
+        }
+      }
+      confirmedOrder = await Order.findById(order._id).session(session);
+    });
+  } finally {
+    await session.endSession();
+  }
+  return confirmedOrder;
+};
+
 const getMyOrderById = async (userId, orderId) => {
   const order = await Order.findOne({ _id: orderId, user: userId }).lean();
   if (!order) throw new AppError("Order not found", 404);
@@ -278,4 +366,6 @@ module.exports = {
   getMyOrders,
   getMyOrderById,
   cancelMyOrder,
+  getSellerOrders,
+  confirmSellerPayment,
 };

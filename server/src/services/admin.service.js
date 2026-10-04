@@ -1,4 +1,4 @@
-const { User, Store, Product, Order, Payment } = require("../models");
+const { User, Store, Product, Order } = require("../models");
 
 const AppError = require("../utils/AppError");
 
@@ -134,19 +134,12 @@ const advanceOrderStatus = async (orderId) => {
     {
       $set: {
         orderStatus: nextStatus,
-        ...(nextStatus === "DELIVERED" ? { paymentStatus: "PAID" } : {}),
       },
     },
     { new: true, runValidators: true },
   );
   if (!updatedOrder)
     throw new AppError("Order status changed; refresh and retry", 409);
-  if (nextStatus === "DELIVERED") {
-    await Payment.updateOne(
-      { order: order._id },
-      { $set: { status: "SUCCEEDED", paidAt: new Date() } },
-    );
-  }
   return updatedOrder;
 };
 

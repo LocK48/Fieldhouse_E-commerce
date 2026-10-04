@@ -3,8 +3,9 @@ import { applySeller } from "../../api/user.api";
 import { getMyStore, createStore } from "../../api/store.api";
 import { deleteProduct, getMyProducts } from "../../api/product.api";
 import ProductForm from "../../components/product/ProductForm";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, orderStatusLabels } from "../../utils/formatters";
 import { useFeedback } from "../../components/common/FeedbackContext";
+import { confirmSellerPayment, getSellerOrders } from "../../api/order.api";
 
 const statusLabels = {
   PENDING: "Đang chờ duyệt",
@@ -23,6 +24,8 @@ export default function SellerPage({
   const { confirm } = useFeedback();
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [confirmingOrderId, setConfirmingOrderId] = useState(null);
   const [loading, setLoading] = useState(user.role === "SELLER");
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(undefined);
@@ -46,6 +49,7 @@ export default function SellerPage({
       const currentStore = await getMyStore();
       setStore(currentStore);
       setProducts(await getMyProducts());
+      setOrders(currentStore.status === "ACTIVE" ? await getSellerOrders() : []);
     } catch (reason) {
       if (reason.response?.status === 404) setStore(null);
       else
@@ -64,11 +68,20 @@ export default function SellerPage({
     getMyStore()
       .then((currentStore) => {
         setStore(currentStore);
-        return getMyProducts();
+        return Promise.all([
+          getMyProducts(),
+          currentStore.status === "ACTIVE" ? getSellerOrders() : Promise.resolve([]),
+        ]);
       })
-      .then(setProducts)
+      .then(([nextProducts, nextOrders]) => {
+        setProducts(nextProducts);
+        setOrders(nextOrders);
+      })
       .catch((reason) => {
-        if (reason.response?.status === 404) setStore(null);
+        if (reason.response?.status === 404) {
+          setStore(null);
+          setOrders([]);
+        }
         else
           setError(
             reason.response?.data?.message ||
@@ -78,6 +91,46 @@ export default function SellerPage({
       })
       .finally(() => setLoading(false));
   }, [user.role]);
+
+  async function confirmOrderPayment(order) {
+    const accepted = await confirm({
+      title: "Xác nhận đã nhận thanh toán?",
+      description: `Xác nhận khoản COD cho đơn #${order._id.slice(-8).toUpperCase()} đã được cửa hàng nhận.`,
+      confirmLabel: "Xác nhận thanh toán",
+    });
+    if (!accepted) return;
+    setConfirmingOrderId(order._id);
+    try {
+      const updated = await confirmSellerPayment(order._id);
+      setOrders((items) =>
+        items.map((item) =>
+          item._id === order._id
+            ? {
+                ...item,
+                paymentStatus: updated.paymentStatus,
+                paidStores: updated.paidStores,
+                sellerPaymentConfirmed: true,
+              }
+            : item,
+        ),
+      );
+      onFeedback(
+        "success",
+        updated.paymentStatus === "PAID"
+          ? "Đã xác nhận thanh toán. Đơn hàng đã được thanh toán đầy đủ."
+          : "Đã xác nhận phần thanh toán của cửa hàng.",
+      );
+    } catch (reason) {
+      onFeedback(
+        "error",
+        reason.response?.data?.message ||
+          reason.message ||
+          "Không thể xác nhận thanh toán.",
+      );
+    } finally {
+      setConfirmingOrderId(null);
+    }
+  }
 
   async function submitApplication(event) {
     event.preventDefault();
@@ -307,6 +360,79 @@ export default function SellerPage({
               {statusLabels[store.status] || store.status}
             </span>
           </section>
+          {store.status === "ACTIVE" && (
+            <section className="seller-orders-section">
+              <div className="dashboard-toolbar">
+                <h2>
+                  Đơn hàng <span>{orders.length}</span>
+                </h2>
+              </div>
+              {orders.length ? (
+                <div className="seller-orders-list">
+                  {orders.map((order) => {
+                    const canConfirmPayment =
+                      order.orderStatus === "DELIVERED" &&
+                      order.paymentMethod === "COD" &&
+                      order.paymentStatus !== "PAID" &&
+                      !order.sellerPaymentConfirmed;
+                    return (
+                      <article className="seller-order-card" key={order._id}>
+                        <header>
+                          <div>
+                            <strong>#{order._id.slice(-8).toUpperCase()}</strong>
+                            <small>
+                              {new Date(order.createdAt).toLocaleDateString("vi-VN")} · {order.user?.name || "Khách hàng"}
+                            </small>
+                          </div>
+                          <span className={`dashboard-status status-${order.orderStatus?.toLowerCase()}`}>
+                            {orderStatusLabels[order.orderStatus] || order.orderStatus}
+                          </span>
+                        </header>
+                        <div className="seller-order-items">
+                          {order.items.map((item, index) => (
+                            <div key={`${item.product}-${index}`}>
+                              <span>{item.name} × {item.quantity}</span>
+                              <strong>{formatCurrency(item.subtotal)}</strong>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="seller-order-shipping">
+                          <span>
+                            Giao tới: {order.shippingAddress?.recipientName} · {order.shippingAddress?.phone} · {order.shippingAddress?.addressLine}, {order.shippingAddress?.ward}, {order.shippingAddress?.district}, {order.shippingAddress?.city}
+                          </span>
+                          <strong>{formatCurrency(order.sellerSubtotal)}</strong>
+                        </div>
+                        <footer>
+                          <span>
+                            {order.paymentStatus === "PAID"
+                              ? "Đã thanh toán"
+                              : order.sellerPaymentConfirmed
+                                ? "Cửa hàng đã xác nhận · Chờ cửa hàng khác"
+                                : order.orderStatus === "DELIVERED"
+                                  ? "COD · Chờ xác nhận"
+                                  : "COD · Xác nhận sau khi giao hàng"}
+                          </span>
+                          {canConfirmPayment && (
+                            <button
+                              className="primary-button"
+                              disabled={confirmingOrderId === order._id}
+                              onClick={() => confirmOrderPayment(order)}
+                            >
+                              {confirmingOrderId === order._id ? "Đang xác nhận…" : "Xác nhận thanh toán"}
+                            </button>
+                          )}
+                        </footer>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="dashboard-panel seller-orders-empty">
+                  <p>Đơn hàng dành cho cửa hàng sẽ xuất hiện tại đây.</p>
+                </div>
+              )}
+            </section>
+          )}
           {store.status === "ACTIVE" && (
             <div className="dashboard-toolbar">
               <h2>

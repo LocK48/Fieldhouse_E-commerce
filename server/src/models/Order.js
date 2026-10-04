@@ -150,6 +150,13 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
 
+    paidStores: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Store",
+      },
+    ],
+
     orderStatus: {
       type: String,
       enum: [
