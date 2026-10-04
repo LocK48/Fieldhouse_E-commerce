@@ -11,6 +11,7 @@ import { getCategories } from "./api/category.api";
 import { getCurrentUser, login, logout } from "./api/auth.api";
 import { cancelMyOrder, createCodOrder, getMyOrders } from "./api/order.api";
 import { getProducts } from "./api/product.api";
+import { resolveMediaUrl } from "./api/axios";
 import { getAddresses } from "./api/address.api";
 import {
   addWishlistProduct,
@@ -252,9 +253,10 @@ function App() {
     };
   }, [setCart, setUser]);
 
-  function productImage(product) {
+  function productImage(product, index = 0) {
+    const image = product?.images?.[index] || product?.images?.[0];
     return (
-      product?.images?.[0]?.url ||
+      resolveMediaUrl(image?.url, image?.key) ||
       (product?.slug?.includes("mercurial") ? mercurialImage : "")
     );
   }

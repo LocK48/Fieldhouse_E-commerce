@@ -1,6 +1,14 @@
 const baseURL = (
   import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1"
 ).replace(/\/$/, "");
+export const getMediaUrl = (key) =>
+  `${baseURL}/media?key=${encodeURIComponent(key)}`;
+export const resolveMediaUrl = (url, key) => {
+  if (key && (!url || url.startsWith("/media?") || url.includes(".r2.cloudflarestorage.com"))) {
+    return getMediaUrl(key);
+  }
+  return url || "";
+};
 let refreshInFlight;
 
 async function request(method, path, options = {}, canRefresh = true) {

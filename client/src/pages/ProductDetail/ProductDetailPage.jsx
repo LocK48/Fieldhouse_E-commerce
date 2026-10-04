@@ -87,7 +87,7 @@ export default function ProductDetailPage({
           <div className="detail-main-image">
             {images[imageIndex] ? (
               <img
-                src={images[imageIndex].url || productImage(product)}
+                src={productImage(product, imageIndex)}
                 alt={images[imageIndex].alt || product.name}
               />
             ) : productImage(product) ? (
@@ -105,7 +105,7 @@ export default function ProductDetailPage({
                   onClick={() => setImageIndex(index)}
                   aria-label={`Ảnh sản phẩm ${index + 1}`}
                 >
-                  <img src={image.url} alt="" />
+                  <img src={productImage(product, index)} alt="" />
                 </button>
               ))}
             </div>
