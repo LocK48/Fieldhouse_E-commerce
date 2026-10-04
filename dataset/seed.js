@@ -8,23 +8,15 @@ serverRequire("dotenv").config({ path: path.join(root, "server", ".env") });
 
 const mongoose = serverRequire("mongoose");
 const bcrypt = serverRequire("bcryptjs");
-const { S3Client, PutObjectCommand, HeadObjectCommand } =
+const { S3Client, HeadObjectCommand } =
   serverRequire("@aws-sdk/client-s3");
 const { User, Store, Category, Product } = serverRequire("./src/models");
+const storageService = serverRequire("./src/services/storage.service");
 const manifestPath = path.join(__dirname, "dataset.json");
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 const publicUrl = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
 const bucket = process.env.R2_BUCKET_NAME;
-const prefix = "fieldhouse-dataset-v2";
 const sharedPassword = manifest.credentials.password;
-
-const batches = (items, size = 5) => {
-  const result = [];
-  for (let index = 0; index < items.length; index += size) {
-    result.push(items.slice(index, index + size));
-  }
-  return result;
-};
 
 async function ensureAccountsAndStores() {
   const passwordHash = await bcrypt.hash(sharedPassword, 12);
@@ -137,56 +129,70 @@ async function main() {
     categoriesBySlug.set(categoryData.slug, category);
   }
 
-  for (const batch of batches(manifest.products)) {
-    await Promise.all(batch.map(async (product) => {
-      const imagePath = path.join(__dirname, product.imageFile);
-      const imageBytes = fs.readFileSync(imagePath);
-      await r2.send(new PutObjectCommand({
-        Bucket: bucket,
-        Key: product.imageKey,
-        Body: imageBytes,
-        ContentType: "image/webp",
-        Metadata: { dataset: prefix, item: product.slug },
-      }));
-    }));
-  }
-  console.log(`Uploaded ${manifest.products.length} source images to R2.`);
+  for (const [index, product] of manifest.products.entries()) {
+    const store = storesByKey.get(product.storeKey);
+    const category = categoriesBySlug.get(product.categorySlug);
+    const storeData = manifest.stores.find((item) => item.key === product.storeKey);
+    if (!store || !category || !storeData) {
+      throw new Error(`Invalid store or category for ${product.slug}`);
+    }
 
-  for (const batch of batches(manifest.products)) {
-    await Promise.all(batch.map(async (product) => {
-      const store = storesByKey.get(product.storeKey);
-      const category = categoriesBySlug.get(product.categorySlug);
-      if (!store || !category) throw new Error(`Invalid store or category for ${product.slug}`);
-
-      product.imageUrl = `${publicUrl}/${product.imageKey}`;
-      await Product.findOneAndUpdate(
-        { store: store._id, slug: product.slug },
-        {
-          $set: {
-            name: product.name,
-            brand: product.brand,
-            category: category._id,
-            description: product.description,
-            images: [{ url: product.imageUrl, key: product.imageKey, alt: product.name, sortOrder: 0 }],
-            variants: [{
-              sku: product.sku,
-              name: "Mặc định",
-              price: product.price,
-              compareAtPrice: product.compareAtPrice,
-              stock: product.stock,
-            }],
-            status: "ACTIVE",
-          },
+    const savedProduct = await Product.findOneAndUpdate(
+      { store: store._id, slug: product.slug },
+      {
+        $set: {
+          name: product.name,
+          brand: product.brand,
+          category: category._id,
+          description: product.description,
+          variants: [{
+            sku: product.sku,
+            name: "Mặc định",
+            price: product.price,
+            compareAtPrice: product.compareAtPrice,
+            stock: product.stock,
+          }],
+          status: "ACTIVE",
         },
-        { upsert: true, returnDocument: "after", runValidators: true, setDefaultsOnInsert: true },
-      );
-    }));
-  }
+      },
+      { upsert: true, returnDocument: "after", runValidators: true, setDefaultsOnInsert: true },
+    );
 
-  for (const batch of batches(manifest.products)) {
-    await Promise.all(batch.map((product) =>
-      r2.send(new HeadObjectCommand({ Bucket: bucket, Key: product.imageKey })),
-    ));
+    const key = `products/${store._id}/${savedProduct._id}/${product.slug}.webp`;
+    const imageBytes = fs.readFileSync(path.join(__dirname, product.imageFile));
+    const uploadUrl = await storageService.createPresignedUpload({
+      key,
+      contentType: "image/webp",
+    });
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "image/webp" },
+      body: imageBytes,
+    });
+    if (!uploadResponse.ok) {
+      throw new Error(`R2 upload failed for ${product.slug}: HTTP ${uploadResponse.status}`);
+    }
+
+    product.imageKey = key;
+    product.imageUrl = `${publicUrl}/${key}`;
+    await Product.updateOne(
+      { _id: savedProduct._id },
+      {
+        $set: {
+          images: [{
+            url: product.imageUrl,
+            key,
+            alt: product.name,
+            sortOrder: 0,
+          }],
+        },
+      },
+      { runValidators: true },
+    );
+    await r2.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    console.log(
+      `Uploaded ${index + 1}/${manifest.products.length}: ${product.slug} for ${storeData.ownerEmail}`,
+    );
   }
 
   const userEmails = [
@@ -211,7 +217,7 @@ async function main() {
   manifest.generatedAt = new Date().toISOString();
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`Verified ${savedUserCount} users (including ${manifest.demoAccounts?.length ?? 0} demo accounts), ${savedStoreCount} stores, and ${savedProductCount} image-matched products.`);
-  console.log(`Verified ${manifest.products.length} R2 objects are readable.`);
+  console.log(`Verified ${manifest.products.length} presigned uploads in R2 under products/.`);
   console.log("Existing users and store owners were left unchanged; missing demo accounts are inserted only when needed.");
   console.log(`Dataset manifest: ${manifestPath}`);
 }

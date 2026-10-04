@@ -1,6 +1,6 @@
 {
   "name": "Fieldhouse image product dataset",
-  "generatedAt": "2026-10-04T17:23:11.423Z",
+  "generatedAt": "2026-10-04T17:39:40.908Z",
   "credentials": {
     "password": "DatasetTest123!",
     "note": "Synthetic local test accounts only."
@@ -135,8 +135,8 @@
       "compareAtPrice": 1940000,
       "stock": 8,
       "imageFile": "img/football/Adidas Copa Pure.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/001-adidas-copa-pure.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/001-adidas-copa-pure.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8f5/image-product-001-adidas-copa-pure.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8f5/image-product-001-adidas-copa-pure.webp"
     },
     {
       "name": "Adidas Mercurial Vapor",
@@ -150,8 +150,8 @@
       "compareAtPrice": 2240000,
       "stock": 15,
       "imageFile": "img/football/Adidas Mercurial Vapor.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/002-adidas-mercurial-vapor.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/002-adidas-mercurial-vapor.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8f7/image-product-002-adidas-mercurial-vapor.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8f7/image-product-002-adidas-mercurial-vapor.webp"
     },
     {
       "name": "Adidas Predator League",
@@ -165,8 +165,8 @@
       "compareAtPrice": 2540000,
       "stock": 22,
       "imageFile": "img/football/Adidas Preadator League.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/003-adidas-predator-league.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/003-adidas-predator-league.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8f6/image-product-003-adidas-predator-league.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8f6/image-product-003-adidas-predator-league.webp"
     },
     {
       "name": "Nike Goalkeeper Gloves",
@@ -180,8 +180,8 @@
       "compareAtPrice": 1940000,
       "stock": 29,
       "imageFile": "img/football/Nike Goalkeeper Gloves.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/004-nike-goalkeeper-gloves.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/004-nike-goalkeeper-gloves.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8f8/image-product-004-nike-goalkeeper-gloves.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8f8/image-product-004-nike-goalkeeper-gloves.webp"
     },
     {
       "name": "Nike Mercurial Vapor",
@@ -195,8 +195,8 @@
       "compareAtPrice": 2240000,
       "stock": 36,
       "imageFile": "img/football/Nike Mercurial Vapor.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/005-nike-mercurial-vapor.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/005-nike-mercurial-vapor.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8f9/image-product-005-nike-mercurial-vapor.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8f9/image-product-005-nike-mercurial-vapor.webp"
     },
     {
       "name": "Nike Phantom GX",
@@ -210,8 +210,8 @@
       "compareAtPrice": 2540000,
       "stock": 43,
       "imageFile": "img/football/Nike Phantom GX.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/006-nike-phantom-gx.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/006-nike-phantom-gx.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fe/image-product-006-nike-phantom-gx.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fe/image-product-006-nike-phantom-gx.webp"
     },
     {
       "name": "Adidas Tiro Training",
@@ -225,8 +225,8 @@
       "compareAtPrice": 540000,
       "stock": 50,
       "imageFile": "img/sportwear/Adidas Tiro Training.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/007-adidas-tiro-training.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/007-adidas-tiro-training.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8fd/image-product-007-adidas-tiro-training.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f8fd/image-product-007-adidas-tiro-training.webp"
     },
     {
       "name": "Nike Classic Warmup",
@@ -240,8 +240,8 @@
       "compareAtPrice": 840000,
       "stock": 14,
       "imageFile": "img/sportwear/Nike Classic Warmup.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/008-nike-classic-warmup.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/008-nike-classic-warmup.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fc/image-product-008-nike-classic-warmup.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fc/image-product-008-nike-classic-warmup.webp"
     },
     {
       "name": "Nike Club Fleece",
@@ -255,8 +255,8 @@
       "compareAtPrice": 1140000,
       "stock": 21,
       "imageFile": "img/sportwear/Nike Club Fleece.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/009-nike-club-fleece.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/009-nike-club-fleece.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fa/image-product-009-nike-club-fleece.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fa/image-product-009-nike-club-fleece.webp"
     },
     {
       "name": "Nike Dri-FIT Academy",
@@ -270,8 +270,8 @@
       "compareAtPrice": 540000,
       "stock": 28,
       "imageFile": "img/sportwear/Nike Dri-FIT Academy.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/010-nike-dri-fit-academy.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/010-nike-dri-fit-academy.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fb/image-product-010-nike-dri-fit-academy.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8fb/image-product-010-nike-dri-fit-academy.webp"
     },
     {
       "name": "Nike Dri-fit Black Shorts",
@@ -285,8 +285,8 @@
       "compareAtPrice": 840000,
       "stock": 35,
       "imageFile": "img/sportwear/Nike Dri-fit Black Shorts.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/011-nike-dri-fit-black-shorts.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/011-nike-dri-fit-black-shorts.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f903/image-product-011-nike-dri-fit-black-shorts.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f903/image-product-011-nike-dri-fit-black-shorts.webp"
     },
     {
       "name": "Nike Everyday Crew",
@@ -300,8 +300,8 @@
       "compareAtPrice": 1140000,
       "stock": 42,
       "imageFile": "img/sportwear/Nike Everyday Crew.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/012-nike-everyday-crew.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/012-nike-everyday-crew.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f902/image-product-012-nike-everyday-crew.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f902/image-product-012-nike-everyday-crew.webp"
     },
     {
       "name": "Adidas Powerlift",
@@ -315,8 +315,8 @@
       "compareAtPrice": 1540000,
       "stock": 49,
       "imageFile": "img/running/Adidas Powerlift.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/013-adidas-powerlift.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/013-adidas-powerlift.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f901/image-product-013-adidas-powerlift.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f901/image-product-013-adidas-powerlift.webp"
     },
     {
       "name": "Nike Air Force 1 Tech Essential",
@@ -330,8 +330,8 @@
       "compareAtPrice": 1840000,
       "stock": 13,
       "imageFile": "img/running/NIke Air Force 1 Tech Essential.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/014-nike-air-force-1-tech-essential.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/014-nike-air-force-1-tech-essential.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f900/image-product-014-nike-air-force-1-tech-essential.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f900/image-product-014-nike-air-force-1-tech-essential.webp"
     },
     {
       "name": "Nike Air Force Game Day",
@@ -345,8 +345,8 @@
       "compareAtPrice": 2140000,
       "stock": 20,
       "imageFile": "img/running/Nike Air Force Game Day.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/015-nike-air-force-game-day.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/015-nike-air-force-game-day.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8ff/image-product-015-nike-air-force-game-day.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f8ff/image-product-015-nike-air-force-game-day.webp"
     },
     {
       "name": "Nike Court Vision",
@@ -360,8 +360,8 @@
       "compareAtPrice": 1540000,
       "stock": 27,
       "imageFile": "img/running/Nike Court Vision.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/016-nike-court-vision.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/016-nike-court-vision.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f907/image-product-016-nike-court-vision.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f907/image-product-016-nike-court-vision.webp"
     },
     {
       "name": "Nike GP Challenge Pro",
@@ -375,8 +375,8 @@
       "compareAtPrice": 1840000,
       "stock": 34,
       "imageFile": "img/running/Nike GP Challenge Pro.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/017-nike-gp-challenge-pro.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/017-nike-gp-challenge-pro.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f906/image-product-017-nike-gp-challenge-pro.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f906/image-product-017-nike-gp-challenge-pro.webp"
     },
     {
       "name": "Nike Legend Essential",
@@ -390,8 +390,8 @@
       "compareAtPrice": 2140000,
       "stock": 41,
       "imageFile": "img/running/Nike Legend Essential.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/018-nike-legend-essential.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/018-nike-legend-essential.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f908/image-product-018-nike-legend-essential.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f908/image-product-018-nike-legend-essential.webp"
     },
     {
       "name": "Nike Pegasus Trail",
@@ -405,8 +405,8 @@
       "compareAtPrice": 1540000,
       "stock": 48,
       "imageFile": "img/running/Nike Pegasus Trail.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/019-nike-pegasus-trail.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/019-nike-pegasus-trail.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f904/image-product-019-nike-pegasus-trail.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f904/image-product-019-nike-pegasus-trail.webp"
     },
     {
       "name": "Nike Training Total Core",
@@ -420,8 +420,8 @@
       "compareAtPrice": 1840000,
       "stock": 12,
       "imageFile": "img/running/Nike Training Total Core.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/020-nike-training-total-core.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/020-nike-training-total-core.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f905/image-product-020-nike-training-total-core.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f905/image-product-020-nike-training-total-core.webp"
     },
     {
       "name": "Puma Velocity Nitro",
@@ -435,8 +435,8 @@
       "compareAtPrice": 2140000,
       "stock": 19,
       "imageFile": "img/running/Puma Velocity Nitro.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/021-puma-velocity-nitro.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/021-puma-velocity-nitro.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90d/image-product-021-puma-velocity-nitro.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90d/image-product-021-puma-velocity-nitro.webp"
     },
     {
       "name": "Adidas Ultraboost Light",
@@ -450,8 +450,8 @@
       "compareAtPrice": 1640000,
       "stock": 26,
       "imageFile": "img/basketball/Adidas Ultraboost Light.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/022-adidas-ultraboost-light.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/022-adidas-ultraboost-light.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f90b/image-product-022-adidas-ultraboost-light.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f90b/image-product-022-adidas-ultraboost-light.webp"
     },
     {
       "name": "Aero Strike",
@@ -465,8 +465,8 @@
       "compareAtPrice": 1940000,
       "stock": 33,
       "imageFile": "img/basketball/Aero Strike.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/023-aero-strike.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/023-aero-strike.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90c/image-product-023-aero-strike.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90c/image-product-023-aero-strike.webp"
     },
     {
       "name": "Asics Gel-Kayano",
@@ -480,8 +480,8 @@
       "compareAtPrice": 2240000,
       "stock": 40,
       "imageFile": "img/basketball/Asics Gel-Kayano.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/024-asics-gel-kayano.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/024-asics-gel-kayano.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f909/image-product-024-asics-gel-kayano.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f909/image-product-024-asics-gel-kayano.webp"
     },
     {
       "name": "Nike Flex Experience",
@@ -495,8 +495,8 @@
       "compareAtPrice": 1640000,
       "stock": 47,
       "imageFile": "img/basketball/Nike Flex Experience.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/025-nike-flex-experience.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/025-nike-flex-experience.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90a/image-product-025-nike-flex-experience.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90a/image-product-025-nike-flex-experience.webp"
     },
     {
       "name": "Essential Core Terrycloth",
@@ -510,8 +510,8 @@
       "compareAtPrice": 740000,
       "stock": 11,
       "imageFile": "img/accessories/Essential Core Terrycloth.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/026-essential-core-terrycloth.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/026-essential-core-terrycloth.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f912/image-product-026-essential-core-terrycloth.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f912/image-product-026-essential-core-terrycloth.webp"
     },
     {
       "name": "Nike Club Cap",
@@ -525,8 +525,8 @@
       "compareAtPrice": 1040000,
       "stock": 18,
       "imageFile": "img/accessories/Nike Club Cap.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/027-nike-club-cap.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/027-nike-club-cap.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f911/image-product-027-nike-club-cap.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f911/image-product-027-nike-club-cap.webp"
     },
     {
       "name": "Nike Heritage Backpacks",
@@ -540,8 +540,8 @@
       "compareAtPrice": 440000,
       "stock": 25,
       "imageFile": "img/accessories/Nike Heritage Backpacks.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/028-nike-heritage-backpacks.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/028-nike-heritage-backpacks.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f910/image-product-028-nike-heritage-backpacks.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f910/image-product-028-nike-heritage-backpacks.webp"
     },
     {
       "name": "Nike Varsity Elite Backpack",
@@ -555,8 +555,8 @@
       "compareAtPrice": 740000,
       "stock": 32,
       "imageFile": "img/accessories/Nike Varsity Elite Backpack.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/029-nike-varsity-elite-backpack.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/029-nike-varsity-elite-backpack.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90f/image-product-029-nike-varsity-elite-backpack.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d90/6ac259edcf7e46666900f90f/image-product-029-nike-varsity-elite-backpack.webp"
     },
     {
       "name": "Ultra Soccer Ball",
@@ -570,8 +570,8 @@
       "compareAtPrice": 1040000,
       "stock": 39,
       "imageFile": "img/accessories/Ultra Soccer Ball.webp",
-      "imageKey": "fieldhouse-dataset-v2/products/030-ultra-soccer-ball.webp",
-      "imageUrl": "https://lock48.dpdns.org/fieldhouse-dataset-v2/products/030-ultra-soccer-ball.webp"
+      "imageKey": "products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f90e/image-product-030-ultra-soccer-ball.webp",
+      "imageUrl": "https://lock48.dpdns.org/products/6ac2599ef7a04dfafe343d91/6ac259edcf7e46666900f90e/image-product-030-ultra-soccer-ball.webp"
     }
   ]
 }

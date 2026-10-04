@@ -63,6 +63,19 @@ const createProductImageUpload = async ({
     error.statusCode = 503;
     throw error;
   }
+
+  let publicHost;
+  try {
+    publicHost = new URL(publicBaseUrl).hostname;
+  } catch {
+    throw new AppError("R2_PUBLIC_URL must be a valid public URL", 503);
+  }
+  if (publicHost.endsWith(".r2.cloudflarestorage.com")) {
+    throw new AppError(
+      "R2_PUBLIC_URL must use the bucket's public custom domain, not the private S3 API endpoint",
+      503,
+    );
+  }
   const publicUrl = `${publicBaseUrl}/${key}`;
 
   return {

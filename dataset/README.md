@@ -14,7 +14,7 @@ To sync the generated records and actual image files to MongoDB and R2, configur
 node dataset/seed.js
 ```
 
-The sync adds or updates image-matched products and uploads each source image under `fieldhouse-dataset-v2/products/`. It verifies product counts and R2 object readability. It does not delete the previous v1 sample or any unrelated MongoDB/R2 data.
+The sync adds or updates image-matched products, then uploads each image sequentially with a presigned PUT URL under `products/{storeId}/{productId}/{slug}.webp`. Each product is assigned to the seller that owns its dataset store. It verifies product counts and R2 object readability. It does not delete previous R2 objects or unrelated MongoDB/R2 data.
 
 The 10 image-dataset accounts use the password `DatasetTest123!`; their existing passwords and profiles are preserved. The seed also creates these demo accounts with password `Password123!` (their password is reset to this value on each seed run):
 
@@ -26,4 +26,4 @@ The 10 image-dataset accounts use the password `DatasetTest123!`; their existing
 
 These are synthetic test accounts, not real people.
 
-After a successful run, `dataset.json` contains the generated public image URLs. Product records use the `image-product-*` slug prefix and R2 objects use `fieldhouse-dataset-v2/`.
+After a successful run, `dataset.json` contains the generated public image URLs and R2 keys. Product records use the `image-product-*` slug prefix and image objects use the same `products/{storeId}/{productId}/` layout as seller uploads.
