@@ -1,19 +1,39 @@
+.role-shell > .announcement {
+  display: none;
+}
+.app-shell.role-shell {
+  overflow: visible;
+}
+.role-shell > .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: #faf9f6;
+}
+.role-shell > .site-footer {
+  padding-left: calc(240px + 9.4%);
+}
 .role-layout {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  min-height: calc(100vh - 170px);
+  display: block;
+  padding-left: 240px;
+  min-height: calc(100vh - 76px);
+  min-height: calc(100dvh - 76px);
   background: #f6f7f3;
 }
 .role-sidebar {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  inset: 76px auto 0 0;
+  z-index: 20;
   display: flex;
-  height: calc(100vh - 120px);
-  min-height: 600px;
+  width: 240px;
+  height: calc(100vh - 76px);
+  height: calc(100dvh - 76px);
+  min-height: 0;
   flex-direction: column;
   padding: 27px 17px 18px;
   background: #18251f;
   color: #e7ecdf;
+  overflow-y: auto;
 }
 .role-brand {
   display: flex;
@@ -276,10 +296,14 @@
 }
 @media (max-width: 820px) {
   .role-layout {
-    grid-template-columns: 68px minmax(0, 1fr);
+    padding-left: 68px;
+  }
+  .role-shell > .site-footer {
+    padding-left: calc(68px + 6%);
   }
   .role-sidebar {
     align-items: center;
+    width: 68px;
     padding: 21px 8px;
   }
   .role-brand {
@@ -326,10 +350,16 @@
 }
 @media (max-width: 560px) {
   .role-layout {
-    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+  .role-shell > .site-footer {
+    padding-left: 9.4%;
   }
   .role-sidebar {
     position: relative;
+    inset: auto;
+    z-index: auto;
+    width: auto;
     height: auto;
     min-height: 0;
     flex-direction: row;

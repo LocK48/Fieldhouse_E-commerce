@@ -539,7 +539,7 @@ function App() {
 
   return (
     <div
-      className={`app-shell mx-0 min-h-screen w-full max-w-none overflow-hidden bg-[#faf9f6] text-[#18211d] ${isAuthPage ? "auth-shell" : ""}`}
+      className={`app-shell mx-0 min-h-screen w-full max-w-none overflow-hidden bg-[#faf9f6] text-[#18211d] ${isAuthPage ? "auth-shell" : ""} ${location.pathname.startsWith(ROUTES.SELLER) || location.pathname.startsWith(ROUTES.ADMIN) ? "role-shell" : ""}`}
     >
       <div className="announcement">
         Giao hàng miễn phí cho đơn từ 1.500.000₫ <span>·</span> Thanh toán khi
@@ -564,6 +564,7 @@ function App() {
         onGoShop={() => {
           setView("shop");
           setAccountMenuOpen(false);
+          navigate("/");
         }}
         onOpenOrders={openOrders}
         onToggleAccount={() => setAccountMenuOpen((open) => !open)}
@@ -873,7 +874,15 @@ function App() {
       </Routes>
 
       <footer className="site-footer">
-        <a className="brand" href="#home" onClick={() => setView("shop")}>
+        <a
+          className="brand"
+          href="/"
+          onClick={(event) => {
+            event.preventDefault();
+            setView("shop");
+            navigate("/");
+          }}
+        >
           <span className="brand-mark">F</span>
           <span>
             fieldhouse<span className="brand-dot">.</span>
