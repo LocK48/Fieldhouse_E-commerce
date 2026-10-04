@@ -40,7 +40,6 @@ import { useCartActions } from "./hooks/useCartActions";
 import { ROUTES, productDetailPath } from "./routes/paths";
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
-import mercurialImage from "../../mercurial.webp";
 import "./App.css";
 import "./Commerce.css";
 import "./Dashboard.css";
