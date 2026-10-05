@@ -15,9 +15,12 @@ const startServer = async () => {
     cors: { origin: process.env.CLIENT_URL || "http://localhost:5173", credentials: true },
   });
   registerChatSocket(io);
-  server.listen(PORT, () => {
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`Fieldhouse API running on port ${PORT}`);
   });
 };
 
-startServer();
+startServer().catch((error) => {
+  console.error("Fieldhouse API failed to start:", error);
+  process.exit(1);
+});
