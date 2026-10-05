@@ -16,14 +16,14 @@ Fieldhouse là đồ án marketplace đồ thể thao full-stack. Khách hàng c
 
 ## Công nghệ
 
-| Phần | Công nghệ |
-| --- | --- |
-| Frontend | React, Vite, React Router, Zustand, Tailwind CSS và CSS riêng |
-| Backend | Node.js, Express 5, Socket.IO |
-| Cơ sở dữ liệu | MongoDB, Mongoose |
-| Xác thực | JWT access/refresh token, phân quyền theo role, email OTP |
-| Lưu ảnh | Cloudflare R2, API tương thích S3 |
-| Đóng gói | Docker, Docker Compose, Nginx |
+| Phần          | Công nghệ                                                     |
+| ------------- | ------------------------------------------------------------- |
+| Frontend      | React, Vite, React Router, Zustand, Tailwind CSS và CSS riêng |
+| Backend       | Node.js, Express 5, Socket.IO                                 |
+| Cơ sở dữ liệu | MongoDB, Mongoose                                             |
+| Xác thực      | JWT access/refresh token, phân quyền theo role, email OTP     |
+| Lưu ảnh       | Cloudflare R2, API tương thích S3                             |
+| Đóng gói      | Docker, Docker Compose, Nginx                                 |
 
 ## Cấu trúc repo
 
@@ -123,10 +123,10 @@ Bộ ảnh sản phẩm nằm trong `dataset/img`. Script tạo dữ liệu sả
 
 Quá trình đồng bộ dataset tạo các tài khoản demo sau, cùng mật khẩu `Password123!`:
 
-| Role | Email |
-| --- | --- |
-| Admin | `admin@fieldhouse.local` |
-| Seller | `nike@fieldhouse.local` |
+| Role   | Email                     |
+| ------ | ------------------------- |
+| Admin  | `admin@fieldhouse.local`  |
+| Seller | `nike@fieldhouse.local`   |
 | Seller | `adidas@fieldhouse.local` |
 
 Dataset có thêm 10 tài khoản người dùng tổng hợp dùng mật khẩu `DatasetTest123!`. Hồ sơ hiện có và quyền sở hữu của seller được giữ nguyên. Chỉ dùng các tài khoản này khi phát triển local; không chạy seed hoặc dùng thông tin demo trên môi trường công khai.
@@ -150,34 +150,19 @@ MongoDB trong Compose hiện chạy standalone. Checkout và hủy đơn COD dù
 
 `docker compose down` dừng container nhưng giữ database volume. `docker compose down -v` sẽ xóa cả dữ liệu MongoDB. Compose phục vụ HTTP; hãy đặt sau reverse proxy có TLS trước khi dùng domain public.
 
-## Deploy API lên Render
-
-Tạo Render **Web Service** trỏ vào thư mục `server`:
-
-- **Root Directory:** `server`
-- **Build Command:** `npm install` (hoặc `npm ci` với lockfile đã commit)
-- **Start Command:** `npm run start`
-- **Health Check Path:** `/api/v1/health`
-
-Khai báo `MONGO_URI`, `CLIENT_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `OTP_HASH_SECRET` trong Environment của Render. Thêm biến SMTP/R2 khi bật các tính năng tương ứng. Server dùng `PORT` do Render cấp và bind tới `0.0.0.0`.
-
-Render Free spin down web service sau 15 phút không có traffic; request tiếp theo có thể mất khoảng một phút để service hoạt động lại. Deploy cũng có thể timeout nếu health check không thành công dù build đã xong. Xem [Render Health Checks](https://render.com/docs/health-checks) và [giới hạn gói Free](https://render.com/docs/free).
-
-Nếu deploy frontend riêng dưới dạng static site, đặt `VITE_API_URL` thành URL API public kèm `/api/v1`, rồi đặt `CLIENT_URL` của API thành origin frontend. Socket.IO cũng cần được cho phép qua cùng API origin.
-
 ## Pages và quyền truy cập
 
-| Đường dẫn | Chức năng |
-| --- | --- |
-| `/` | Trang chủ cửa hàng |
-| `/products` | Danh sách/tìm kiếm sản phẩm |
-| `/products/:productId` | Chi tiết sản phẩm và người bán |
-| `/stores/slug/:slug` | Trang cửa hàng public |
+| Đường dẫn                       | Chức năng                                |
+| ------------------------------- | ---------------------------------------- |
+| `/`                             | Trang chủ cửa hàng                       |
+| `/products`                     | Danh sách/tìm kiếm sản phẩm              |
+| `/products/:productId`          | Chi tiết sản phẩm và người bán           |
+| `/stores/slug/:slug`            | Trang cửa hàng public                    |
 | `/cart`, `/checkout`, `/orders` | Giỏ hàng, thanh toán COD, đơn hàng khách |
-| `/profile`, `/wishlist` | Hồ sơ, địa chỉ và sản phẩm yêu thích |
-| `/seller`, `/seller/messages` | Kênh người bán và chat |
-| `/admin`, `/admin/messages` | Kênh admin và hộp thư hỗ trợ |
-| `/login`, `/register` | Đăng nhập và đăng ký xác thực OTP |
+| `/profile`, `/wishlist`         | Hồ sơ, địa chỉ và sản phẩm yêu thích     |
+| `/seller`, `/seller/messages`   | Kênh người bán và chat                   |
+| `/admin`, `/admin/messages`     | Kênh admin và hộp thư hỗ trợ             |
+| `/login`, `/register`           | Đăng nhập và đăng ký xác thực OTP        |
 
 Sản phẩm mới của seller cần admin duyệt trước khi xuất hiện trên cửa hàng. Admin cập nhật quy trình giao hàng. Sau khi đơn được giao, từng cửa hàng xác nhận phần COD của mình; đơn có nhiều cửa hàng chỉ được đánh dấu đã thanh toán sau khi tất cả cửa hàng xác nhận.
 
@@ -185,18 +170,18 @@ Sản phẩm mới của seller cần admin duyệt trước khi xuất hiện t
 
 REST API dùng tiền tố `/api/v1`. Endpoint cần đăng nhập nhận header `Authorization: Bearer <accessToken>`, trừ các luồng dùng refresh token.
 
-| Nhóm | Base path | Chức năng |
-| --- | --- | --- |
-| Health | `/health` | Kiểm tra trạng thái service |
-| Authentication | `/auth` | OTP, đăng nhập, refresh, logout, thông tin người dùng |
-| Sản phẩm/danh mục | `/products`, `/categories` | Tìm kiếm catalog, chi tiết và quản lý sản phẩm seller |
-| Cửa hàng | `/stores` | Trang cửa hàng public và hồ sơ cửa hàng seller |
-| Giỏ hàng/đơn hàng | `/cart`, `/orders` | Giỏ hàng, COD, lịch sử đơn và xác nhận thanh toán seller |
-| Dữ liệu khách | `/users`, `/users/me/addresses`, `/wishlist` | Hồ sơ, sổ địa chỉ, wishlist |
-| Đánh giá | `/reviews` | Đánh giá sản phẩm sau khi nhận hàng |
-| Chat | `/chat` | REST cho hội thoại; tin nhắn realtime dùng Socket.IO |
-| Upload/media | `/uploads`, `/media` | Upload R2 qua presigned URL và phục vụ ảnh |
-| Quản trị | `/admin` | Duyệt seller/cửa hàng/sản phẩm và xử lý đơn |
+| Nhóm              | Base path                                    | Chức năng                                                |
+| ----------------- | -------------------------------------------- | -------------------------------------------------------- |
+| Health            | `/health`                                    | Kiểm tra trạng thái service                              |
+| Authentication    | `/auth`                                      | OTP, đăng nhập, refresh, logout, thông tin người dùng    |
+| Sản phẩm/danh mục | `/products`, `/categories`                   | Tìm kiếm catalog, chi tiết và quản lý sản phẩm seller    |
+| Cửa hàng          | `/stores`                                    | Trang cửa hàng public và hồ sơ cửa hàng seller           |
+| Giỏ hàng/đơn hàng | `/cart`, `/orders`                           | Giỏ hàng, COD, lịch sử đơn và xác nhận thanh toán seller |
+| Dữ liệu khách     | `/users`, `/users/me/addresses`, `/wishlist` | Hồ sơ, sổ địa chỉ, wishlist                              |
+| Đánh giá          | `/reviews`                                   | Đánh giá sản phẩm sau khi nhận hàng                      |
+| Chat              | `/chat`                                      | REST cho hội thoại; tin nhắn realtime dùng Socket.IO     |
+| Upload/media      | `/uploads`, `/media`                         | Upload R2 qua presigned URL và phục vụ ảnh               |
+| Quản trị          | `/admin`                                     | Duyệt seller/cửa hàng/sản phẩm và xử lý đơn              |
 
 Socket.IO chạy cùng origin backend. Server xác thực access token cho socket. Hội thoại khách-seller/CSKH chỉ hiển thị cho participant; hộp thư hỗ trợ tổng thể chỉ dành cho admin.
 

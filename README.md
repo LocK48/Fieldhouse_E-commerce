@@ -16,14 +16,14 @@ Fieldhouse is a full-stack sports goods marketplace built as a portfolio project
 
 ## Tech stack
 
-| Area | Technology |
-| --- | --- |
-| Frontend | React, Vite, React Router, Zustand, Tailwind CSS, custom CSS |
-| Backend | Node.js, Express 5, Socket.IO |
-| Database | MongoDB, Mongoose |
+| Area           | Technology                                                         |
+| -------------- | ------------------------------------------------------------------ |
+| Frontend       | React, Vite, React Router, Zustand, Tailwind CSS, custom CSS       |
+| Backend        | Node.js, Express 5, Socket.IO                                      |
+| Database       | MongoDB, Mongoose                                                  |
 | Authentication | JWT access and refresh tokens, role-based authorization, email OTP |
-| Image storage | Cloudflare R2, S3-compatible API |
-| Containers | Docker, Docker Compose, Nginx |
+| Image storage  | Cloudflare R2, S3-compatible API                                   |
+| Containers     | Docker, Docker Compose, Nginx                                      |
 
 ## Repository layout
 
@@ -123,10 +123,10 @@ The optional image dataset lives under `dataset/img`. It contains synthetic prod
 
 The dataset sync creates these local demo accounts with the shared password `Password123!`:
 
-| Role | Email |
-| --- | --- |
-| Admin | `admin@fieldhouse.local` |
-| Seller | `nike@fieldhouse.local` |
+| Role   | Email                     |
+| ------ | ------------------------- |
+| Admin  | `admin@fieldhouse.local`  |
+| Seller | `nike@fieldhouse.local`   |
 | Seller | `adidas@fieldhouse.local` |
 
 The dataset also has 10 synthetic user accounts that use `DatasetTest123!`. Existing dataset user profiles and seller ownership are preserved. Demo credentials are for local development only; never seed or use them in a public environment.
@@ -150,34 +150,19 @@ The bundled MongoDB container currently runs as a standalone instance. COD check
 
 `docker compose down` stops and removes the containers but keeps the database volume. `docker compose down -v` also deletes the MongoDB data. The Compose setup serves HTTP; place it behind a TLS-enabled reverse proxy before using a public domain.
 
-## Deploying the API to Render
-
-For a Render **Web Service** configured from the `server` directory:
-
-- **Root Directory:** `server`
-- **Build Command:** `npm install` (or `npm ci` when using the committed lockfile)
-- **Start Command:** `npm run start`
-- **Health Check Path:** `/api/v1/health`
-
-Set `MONGO_URI`, `CLIENT_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, and `OTP_HASH_SECRET` in the Render environment. Add SMTP and R2 variables when those features are enabled. The server listens on Render's `PORT` and binds to `0.0.0.0`.
-
-Render's Free web services spin down after 15 minutes without inbound traffic; the next request may take about a minute to wake the service. A deploy that fails health checks can time out even if the build succeeded. See [Render health checks](https://render.com/docs/health-checks) and [Free instance limitations](https://render.com/docs/free).
-
-For a separate frontend deployment, deploy `client` as a static site and set `VITE_API_URL` to the public API URL including `/api/v1`. Configure the API's `CLIENT_URL` to the frontend origin. For WebSocket chat, allow Socket.IO traffic through the same API origin.
-
 ## Pages and roles
 
-| Path | Purpose |
-| --- | --- |
-| `/` | Storefront home |
-| `/products` | Searchable product catalog |
-| `/products/:productId` | Product details and seller information |
-| `/stores/slug/:slug` | Public seller storefront |
-| `/cart`, `/checkout`, `/orders` | Cart, COD checkout, and customer orders |
-| `/profile`, `/wishlist` | Customer profile, addresses, and saved products |
-| `/seller`, `/seller/messages` | Seller studio and seller chat |
-| `/admin`, `/admin/messages` | Admin workspace and support inbox |
-| `/login`, `/register` | Authentication and email OTP registration |
+| Path                            | Purpose                                         |
+| ------------------------------- | ----------------------------------------------- |
+| `/`                             | Storefront home                                 |
+| `/products`                     | Searchable product catalog                      |
+| `/products/:productId`          | Product details and seller information          |
+| `/stores/slug/:slug`            | Public seller storefront                        |
+| `/cart`, `/checkout`, `/orders` | Cart, COD checkout, and customer orders         |
+| `/profile`, `/wishlist`         | Customer profile, addresses, and saved products |
+| `/seller`, `/seller/messages`   | Seller studio and seller chat                   |
+| `/admin`, `/admin/messages`     | Admin workspace and support inbox               |
+| `/login`, `/register`           | Authentication and email OTP registration       |
 
 New seller products require admin approval before appearing in the public catalog. The admin manages order fulfillment statuses. After an order is delivered, each seller confirms the COD payment for their store; a multi-store order is marked paid after all participating stores confirm.
 
@@ -185,18 +170,18 @@ New seller products require admin approval before appearing in the public catalo
 
 All REST endpoints use the `/api/v1` prefix. Protected endpoints require `Authorization: Bearer <accessToken>` unless they use the refresh-token flow.
 
-| API area | Base path | Capabilities |
-| --- | --- | --- |
-| Health | `/health` | Service status |
-| Authentication | `/auth` | OTP registration, login, refresh, logout, current user |
-| Products and categories | `/products`, `/categories` | Catalog search, product details, seller product management, category data |
-| Stores | `/stores` | Public store pages and seller store management |
-| Cart and orders | `/cart`, `/orders` | Cart management, COD checkout, order history, seller order/payment actions |
-| Customer data | `/users`, `/users/me/addresses`, `/wishlist` | Profile, address book, saved products |
-| Reviews | `/reviews` | Product reviews for eligible delivered orders |
-| Chat | `/chat` | Conversation REST API; live messages use Socket.IO |
-| Uploads and media | `/uploads`, `/media` | Presigned R2 uploads and image delivery |
-| Administration | `/admin` | Seller/store/product review and order fulfillment |
+| API area                | Base path                                    | Capabilities                                                               |
+| ----------------------- | -------------------------------------------- | -------------------------------------------------------------------------- |
+| Health                  | `/health`                                    | Service status                                                             |
+| Authentication          | `/auth`                                      | OTP registration, login, refresh, logout, current user                     |
+| Products and categories | `/products`, `/categories`                   | Catalog search, product details, seller product management, category data  |
+| Stores                  | `/stores`                                    | Public store pages and seller store management                             |
+| Cart and orders         | `/cart`, `/orders`                           | Cart management, COD checkout, order history, seller order/payment actions |
+| Customer data           | `/users`, `/users/me/addresses`, `/wishlist` | Profile, address book, saved products                                      |
+| Reviews                 | `/reviews`                                   | Product reviews for eligible delivered orders                              |
+| Chat                    | `/chat`                                      | Conversation REST API; live messages use Socket.IO                         |
+| Uploads and media       | `/uploads`, `/media`                         | Presigned R2 uploads and image delivery                                    |
+| Administration          | `/admin`                                     | Seller/store/product review and order fulfillment                          |
 
 Chat clients connect to the Socket.IO server on the API origin. The server authenticates sockets with the current access token; customer and seller support conversations are private to their participants, while the support inbox is available to admins.
 
