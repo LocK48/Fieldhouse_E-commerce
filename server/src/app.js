@@ -1,4 +1,5 @@
 const express = require("express");
+const swaggerUi = require("swagger-ui-express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -17,6 +18,7 @@ const addressRoutes = require("./routes/address.routes");
 const reviewRoutes = require("./routes/review.routes");
 const chatRoutes = require("./routes/chat.routes");
 const mediaRoutes = require("./routes/media.routes");
+const openApiSpec = require("./docs/openapi");
 
 const app = express();
 
@@ -43,6 +45,27 @@ app.get("/api/v1/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.get("/docs/openapi.json", (req, res) => {
+  res.json(openApiSpec);
+});
+
+app.use("/docs", (req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'",
+  );
+  next();
+});
+app.use(
+  "/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(openApiSpec, {
+    explorer: true,
+    swaggerOptions: { persistAuthorization: false, displayRequestDuration: true },
+    customSiteTitle: "Fieldhouse API Documentation",
+  }),
+);
 
 app.use("/api/v1/auth", authRoutes);
 

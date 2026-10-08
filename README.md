@@ -185,6 +185,14 @@ All REST endpoints use the `/api/v1` prefix. Protected endpoints require `Author
 
 Chat clients connect to the Socket.IO server on the API origin. The server authenticates sockets with the current access token; customer and seller support conversations are private to their participants, while the support inbox is available to admins.
 
+### Interactive API documentation
+
+When the backend is running, open Swagger UI at `http://localhost:5000/docs`. The raw OpenAPI 3 specification is available at `http://localhost:5000/docs/openapi.json`. In production, replace the local host with the backend's public domain (for example, `https://<your-api-domain>/docs`).
+
+To try protected endpoints, sign in through `/auth/login`, copy the `accessToken` from the response, select **Authorize** in Swagger UI, and paste the token without the `Bearer ` prefix. Swagger UI adds the prefix automatically. Never paste a refresh token or publish real access tokens. Role-restricted endpoints still require the matching account role.
+
+The spec is maintained in `server/src/docs/openapi.js`; update it whenever REST routes or request/response contracts change. Socket.IO chat is described in the overview but does not appear as a REST operation in Swagger UI.
+
 ## Development checks
 
 Run these from their respective directories:

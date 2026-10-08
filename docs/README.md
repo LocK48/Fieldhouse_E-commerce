@@ -185,6 +185,14 @@ REST API dùng tiền tố `/api/v1`. Endpoint cần đăng nhập nhận header
 
 Socket.IO chạy cùng origin backend. Server xác thực access token cho socket. Hội thoại khách-seller/CSKH chỉ hiển thị cho participant; hộp thư hỗ trợ tổng thể chỉ dành cho admin.
 
+### Swagger UI
+
+Khi backend đang chạy, mở tài liệu tương tác tại `http://localhost:5000/docs`. OpenAPI spec dạng JSON nằm ở `http://localhost:5000/docs/openapi.json`. Trên môi trường deploy, thay host local bằng domain public của backend, ví dụ `https://<domain-api>/docs`.
+
+Để thử endpoint cần đăng nhập, gọi `/auth/login`, sao chép `accessToken` trong response, bấm **Authorize** trên Swagger UI và dán token không kèm tiền tố `Bearer `. Swagger UI tự thêm tiền tố. Không dán refresh token hoặc công khai access token thật. Các endpoint giới hạn role vẫn yêu cầu tài khoản đúng role.
+
+OpenAPI spec được quản lý ở `server/src/docs/openapi.js`; cập nhật file này khi thay đổi REST route hoặc cấu trúc request/response. Chat Socket.IO được ghi chú trong mô tả nhưng không hiển thị như REST operation trong Swagger UI.
+
 ## Kiểm tra khi phát triển
 
 Chạy từ từng thư mục tương ứng:
